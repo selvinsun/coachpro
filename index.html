@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COACHPRO · 运动训练课助手</title>
+<meta name="theme-color" content="#0E1C33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="COACHPRO">
+<meta name="format-detection" content="telephone=no">
+<style>
+:root{
+  --navy:#0E1C33; --navy2:#1B3155; --navy3:#28456F;
+  --gold:#D9AE55; --gold2:#EDD08A;
+  --bg:#F4F6FA; --card:#FFFFFF;
+  --line:#E9ECF2; --line2:#F1F4F8;
+  --ink:#0F172A; --ink2:#5B6B85; --ink3:#94A3B8;
+  --blue:#2F6FE4; --green:#12B76A; --orange:#EF8A3C;
+  --r:18px; --r2:14px; --r3:10px;
+  --sh:0 1px 2px rgba(15,23,42,.04), 0 6px 20px -10px rgba(15,23,42,.14);
+  --f:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--f);background:var(--bg);color:var(--ink);
+  min-height:100dvh;
+  -webkit-text-size-adjust:100%;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+/* 手机 / 平板：满屏铺满，不再套固定宽度的手机壳 */
+.app{
+  width:100%;max-width:480px;margin:0 auto;
+  height:100dvh;background:var(--bg);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  /* 永远躲开状态栏 / 刘海，浏览器里也生效 */
+  padding-top:env(safe-area-inset-top);
+}
+/* 手机上去掉那条假的「小程序状态栏」，避免和系统状态栏叠两层 */
+.app .statusbar{display:none}
+/* 桌面：才显示成居中的手机预览壳 */
+@media (min-width:900px){
+  body{
+    background:#0A1018;display:flex;align-items:center;justify-content:center;
+    padding:24px 0;
+  }
+  .app{
+    width:390px;height:860px;max-height:calc(100dvh - 48px);
+    border-radius:26px;box-shadow:0 40px 90px -20px rgba(0,0,0,.72);
+    padding-top:0;
+  }
+  .app .statusbar{display:flex}
+}
+/* 折叠屏 / 平板：左右分栏，左边配置右边出教案 */
+@media (min-width:600px){
+  .app{
+    max-width:none;flex-direction:row;align-items:stretch;
+  }
+  #screen-config{
+    flex:0 0 340px;width:340px;
+    border-right:1px solid #E4E9F2;
+    padding-bottom:0;
+  }
+  #screen-plan,#screen-loading{flex:1;min-width:0}
+  #screen-loading{padding-top:16px}
+  .plan-empty{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:10px;
+    color:var(--ink3);background:var(--bg);
+  }
+  .plan-empty .pe-ico{font-size:38px;opacity:.5}
+  .plan-empty .pe-t{font-size:14px;font-weight:600;color:var(--ink2)}
+  .plan-empty .pe-s{font-size:12px}
+  #screen-plan .pbar{position:sticky;top:0;padding:0 10px 10px;gap:6px}
+  #screen-plan .pbar .ttl{font-size:13px}
+  #screen-plan .mini{padding:5px 9px;font-size:11px}
+  #screen-plan .ai-chip{font-size:9px;padding:1px 5px;margin-left:4px}
+  #screen-plan .card{margin:10px 10px 0;padding:14px 13px}
+  #screen-plan .item{margin:9px 10px 0}
+  #screen-plan .theme{font-size:15.5px}
+  #screen-plan .block .bv{font-size:12px}
+}
+@media (max-width:599px){
+  .plan-empty{display:none!important}
+}
+/* iOS 上输入框字号小于 16px 会自动放大页面 */
+@media (max-width:899px){
+  #needs, .fin, .edit input{ font-size:16px }
+}
+
+/* 小程序顶栏模拟 */
+.statusbar{
+  flex-shrink:0;height:44px;background:var(--navy);color:#fff;
+  display:flex;align-items:center;justify-content:center;position:relative;
+  font-size:15px;font-weight:600;letter-spacing:.5px;
+}
+.statusbar .caps{position:absolute;right:12px;display:flex;align-items:center;gap:9px}
+.statusbar .caps i{display:block;width:3.5px;height:3.5px;border-radius:50%;background:#fff;opacity:.9}
+.statusbar .caps .ring{width:15px;height:15px;border-radius:50%;border:1.8px solid #fff;border-top-color:transparent;transform:rotate(45deg)}
+
+.scroll{flex:1;overflow-y:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* ============ 品牌卡 ============ */
+.brand{
+  background:linear-gradient(150deg,#1D3255 0%,var(--navy) 58%,#0A1420 100%);
+  padding:16px 18px 18px;position:relative;overflow:hidden;
+}
+.brand::after{
+  content:"";position:absolute;right:-56px;top:-56px;width:190px;height:190px;
+  border-radius:50%;background:radial-gradient(circle,rgba(217,174,85,.16),transparent 68%);
+}
+.brand-top{display:flex;align-items:center;gap:11px;position:relative;z-index:1}
+.logo{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  border:1.5px solid rgba(217,174,85,.65);display:grid;place-items:center;
+  background:rgba(217,174,85,.08);
+}
+.logo svg{width:23px;height:23px}
+.brand-name{color:#fff;font-size:20px;font-weight:800;letter-spacing:2.5px;line-height:1}
+.brand-name em{color:var(--gold);font-style:normal}
+.brand-sub{color:#8FA4C4;font-size:8.5px;letter-spacing:2.6px;margin-top:5px}
+.brand-tag{
+  color:#D6E1F0;font-size:12.5px;margin-top:14px;position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.brand-tag .inner{
+  border:1px solid rgba(217,174,85,.5);color:var(--gold2);font-size:10.5px;
+  padding:3px 8px;border-radius:7px;font-weight:500;
+}
+.brand-stats{display:flex;margin-top:13px;position:relative;z-index:1}
+.brand-stats .s{flex:1;text-align:center;border-left:1px solid rgba(255,255,255,.09)}
+.brand-stats .s:first-child{border-left:none}
+.brand-stats .n{color:var(--gold);font-size:19px;font-weight:750;letter-spacing:-.3px}
+.brand-stats .l{color:#8FA4C4;font-size:10px;margin-top:3px}
+
+/* ============ 卡片 ============ */
+.card{
+  background:var(--card);border-radius:var(--r);margin:12px 12px 0;
+  padding:16px 15px;box-shadow:var(--sh);border:1px solid #F0F3F8;
+}
+.lbl{font-size:13px;font-weight:650;color:var(--ink);display:flex;align-items:center;gap:6px}
+.lbl .opt{font-size:10px;color:var(--ink3);font-weight:400}
+.lbl .req{font-size:10px;color:var(--orange);font-weight:500}
+
+/* 项目网格 */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}
+.proj{
+  border:1.5px solid var(--line);border-radius:var(--r2);background:#fff;
+  padding:11px 2px 9px;text-align:center;cursor:pointer;
+  transition:all .15s;
+}
+.proj:active{transform:scale(.95)}
+.proj .e{font-size:23px;line-height:1}
+.proj .t{font-size:11.5px;color:var(--ink2);margin-top:5px;font-weight:500}
+.proj.on{border-color:var(--navy3);background:#EEF3FE}
+.proj.on .t{color:var(--navy);font-weight:650}
+
+/* 文本域 */
+textarea{
+  width:100%;border:1.5px solid var(--line);border-radius:var(--r2);background:#fff;
+  padding:12px 13px;font-family:inherit;font-size:13px;color:var(--ink);
+  resize:none;line-height:1.62;margin-top:11px;min-height:96px;
+}
+textarea:focus{outline:none;border-color:var(--navy3);box-shadow:0 0 0 3px rgba(40,69,111,.07)}
+textarea::placeholder{color:#AEB9CA}
+textarea{overflow-y:auto}
+textarea::-webkit-scrollbar{width:0;display:none}
+
+/* 标签 */
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.tag{
+  font-size:11.5px;color:var(--ink2);background:#F2F4F9;border:1px solid transparent;
+  padding:6.5px 11px;border-radius:8px;cursor:pointer;transition:all .14s;font-weight:500;
+}
+.tag:active{transform:scale(.95)}
+.tag.on{background:#E8EFFE;border-color:#B9CDF5;color:#22509E;font-weight:600}
+
+/* 数字输入 */
+.numrow{display:flex;align-items:center;gap:8px;margin-top:11px}
+.num{
+  width:74px;border:1.5px solid var(--line);border-radius:var(--r2);background:#fff;
+  padding:12px 0;text-align:center;font-size:19px;font-weight:650;font-family:inherit;
+  color:var(--ink);letter-spacing:.5px;
+}
+.num:focus{outline:none;border-color:var(--navy3);box-shadow:0 0 0 3px rgba(40,69,111,.07)}
+.num::-webkit-outer-spin-button,.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.unit{font-size:13px;color:var(--ink2)}
+.spacer{flex:1}
+.stage{
+  font-size:11px;color:#9A6D1F;background:#FBF1DD;border:1px solid #F3E3C2;
+  padding:4px 10px;border-radius:7px;font-weight:600;
+}
+
+/* 双选卡片 */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.duo .d{
+  border:1.5px solid var(--line);border-radius:var(--r2);padding:11px 8px;text-align:center;
+  cursor:pointer;transition:all .15s;
+}
+.duo .d .t{font-size:13px;font-weight:650;color:var(--ink)}
+.duo .d .s{font-size:10.5px;color:var(--ink3);margin-top:3px}
+.duo .d.on{border-color:var(--navy3);background:#EEF3FE}
+.duo .d.on .t{color:var(--navy)}
+
+/* 主按钮 */
+.gen{
+  display:block;width:100%;border:none;border-radius:var(--r2);
+  background:linear-gradient(120deg,#223C63,var(--navy));color:#fff;
+  font-family:inherit;font-size:14.5px;font-weight:700;letter-spacing:.6px;
+  padding:15px;margin:18px 12px 0;width:calc(100% - 24px);cursor:pointer;
+  box-shadow:0 8px 20px -8px rgba(14,28,51,.55);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.gen:active{transform:scale(.985)}
+.gen:disabled{background:#8A94A6;box-shadow:none}
+
+/* 我的教案 */
+.mine{
+  margin:12px;background:#FBF4E6;border:1px solid #F2E5CB;border-radius:var(--r2);
+  padding:13px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+}
+.mine .l{font-size:12.5px;font-weight:650;color:#8A6417;display:flex;align-items:center;gap:7px}
+.mine .r{font-size:11.5px;color:#B08940}
+
+/* ============ 结果页 ============ */
+.pbar{
+  flex-shrink:0;background:var(--navy);color:#fff;padding:0 14px 12px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:5;
+}
+.back{
+  width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);
+  display:grid;place-items:center;cursor:pointer;flex-shrink:0;
+}
+.back svg{width:15px;height:15px}
+.pbar .ttl{font-size:14px;font-weight:650;flex:1}
+.mini{
+  font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;
+  background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);
+  padding:6px 11px;border-radius:8px;
+}
+.mini:active{transform:scale(.95)}
+.mini.gold{background:rgba(217,174,85,.16);border-color:rgba(217,174,85,.45);color:var(--gold2)}
+
+.theme{
+  font-size:17.5px;font-weight:780;line-height:1.5;letter-spacing:.2px;
+  color:var(--navy);margin:0 0 14px;
+}
+.block{margin-top:13px}
+.block .bk{
+  font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:5px;
+  display:flex;align-items:center;gap:5px;
+}
+.block .bk::before{
+  content:"";width:3px;height:11px;border-radius:2px;background:var(--gold);
+}
+.block .bv{font-size:12.5px;line-height:1.78;color:#3F4C63;letter-spacing:.1px}
+
+/* 分段进度条 */
+.seg{display:flex;gap:2px;height:6px;margin:16px 0 7px;border-radius:3px;overflow:hidden}
+.seg i{display:block;border-radius:2px}
+.segnote{font-size:11px;color:var(--ink3);margin-bottom:4px}
+
+/* 训练项目卡 */
+.item{
+  background:#fff;border:1px solid #EDF0F5;border-radius:var(--r);padding:13px 14px;
+  margin-top:9px;box-shadow:var(--sh);cursor:pointer;transition:transform .12s;
+}
+.item:active{transform:scale(.988)}
+.item-head{display:flex;align-items:flex-start;gap:10px}
+.badge{
+  width:29px;height:29px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;
+  color:#fff;font-size:12.5px;font-weight:750;letter-spacing:-.3px;
+}
+.item-main{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:680;color:var(--ink);letter-spacing:.1px}
+.item-role{font-size:11px;color:var(--ink3);margin-top:3px}
+.item-min{
+  font-size:11px;font-weight:650;color:#9A6D1F;background:#FBF1DD;
+  padding:4px 8px;border-radius:7px;flex-shrink:0;white-space:nowrap;
+}
+.item-desc{font-size:12.5px;color:#4B5A72;line-height:1.7;margin-top:9px}
+.item-goal{
+  background:#F2F6FE;border-radius:9px;padding:8px 10px;margin-top:9px;
+  font-size:11.5px;line-height:1.65;color:#3A5380;
+}
+.item-goal b{color:#2F6FE4;font-weight:650}
+.item-foot{
+  font-size:11.5px;color:#B08940;margin-top:9px;display:flex;justify-content:space-between;align-items:center;
+}
+.item-foot .arrow{color:#C9BFA8}
+
+/* ============ 详情弹层 ============ */
+.mask{
+  position:absolute;inset:0;background:rgba(10,16,24,.5);opacity:0;pointer-events:none;
+  transition:opacity .24s;z-index:20;backdrop-filter:blur(2px);
+}
+.mask.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;z-index:21;background:#fff;
+  padding-bottom:env(safe-area-inset-bottom);
+  border-radius:22px 22px 0 0;transform:translateY(101%);
+  transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:90%;display:flex;flex-direction:column;
+}
+.sheet.on{transform:translateY(0)}
+.grip{width:34px;height:4px;border-radius:2px;background:#DDE2EA;margin:8px auto 0;flex-shrink:0}
+.sh-head{padding:12px 16px 10px;display:flex;align-items:flex-start;gap:10px;flex-shrink:0}
+.sh-head .bd{width:29px;height:29px;border-radius:9px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-size:12.5px;font-weight:750}
+.sh-head .h{flex:1;min-width:0}
+.sh-head .h .n{font-size:15px;font-weight:700}
+.sh-head .h .r{font-size:11px;color:var(--ink3);margin-top:3px}
+.x{
+  width:27px;height:27px;border-radius:50%;background:#F0F2F6;border:none;cursor:pointer;
+  display:grid;place-items:center;color:var(--ink2);flex-shrink:0;
+}
+.x svg{width:12px;height:12px}
+.sh-body{overflow-y:auto;padding:0 16px 22px}
+
+/* 修改输入 */
+.edit{display:flex;gap:8px;background:#FBF7EF;border:1px solid #F1E7D4;border-radius:var(--r2);padding:8px;margin-bottom:12px}
+.edit input{
+  flex:1;border:none;background:#fff;border-radius:9px;padding:10px 12px;
+  font-family:inherit;font-size:12.5px;color:var(--ink);
+}
+.edit input:focus{outline:none}
+.edit input::placeholder{color:#B3A99A}
+.edit button{
+  border:none;background:var(--navy);color:#fff;border-radius:9px;padding:0 14px;
+  font-family:inherit;font-size:12px;font-weight:650;cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;gap:4px;
+}
+.edit button svg{width:12px;height:12px}
+
+/* 战术图 */
+.dia{
+  background:#132A4C;border-radius:15px;overflow:hidden;
+  box-shadow:0 10px 26px -14px rgba(19,42,76,.7);
+}
+.dia-top{position:relative}
+.dia svg{display:block;width:100%;height:auto}
+.stepno{
+  position:absolute;right:10px;top:9px;font-size:10.5px;color:#D6E1F0;
+  background:rgba(6,16,32,.5);padding:3px 8px;border-radius:6px;letter-spacing:.3px;
+}
+.dia-cap{
+  padding:11px 13px 12px;color:#fff;
+}
+.dia-cap .cap{
+  display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.55;
+}
+.dia-cap .cap .cn{
+  width:17px;height:17px;border-radius:50%;background:var(--gold);color:#132A4C;
+  font-size:10px;font-weight:800;display:grid;place-items:center;flex-shrink:0;margin-top:1px;
+}
+.dia-ctrl{display:flex;align-items:center;gap:8px;padding:10px 13px 12px}
+.dia-ctrl .nav{
+  width:25px;height:25px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
+  background:transparent;color:#C7D4E8;display:grid;place-items:center;cursor:pointer;flex-shrink:0;
+}
+.dia-ctrl .nav svg{width:10px;height:10px}
+.dia-ctrl .dots{flex:1;display:flex;justify-content:center;gap:7px}
+.dia-ctrl .dot{
+  width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+  color:#9FB3D0;font-size:11px;font-weight:650;display:grid;place-items:center;
+  cursor:pointer;transition:all .16s;
+}
+.dia-ctrl .dot.on{background:var(--gold);border-color:var(--gold);color:#132A4C}
+.dia-ctrl .hint{font-size:10px;color:#7E93B2;flex-shrink:0}
+.legend{
+  display:flex;flex-wrap:wrap;gap:10px;padding:0 13px 12px;font-size:9.5px;color:#93A6C2;
+}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend i{display:block;width:13px;height:0;border-top:2px dashed #fff}
+.legend i.s1{border-top:2px solid #F0A93F;border-style:solid}
+.legend i.s2{border-top:2px dotted #E8C77A}
+.legend i.s3{border-top:2px solid #E9664A}
+
+/* 详情正文 */
+.dtl{margin-top:13px}
+.dtl .dr{display:flex;gap:8px;margin-top:10px;font-size:12.5px;line-height:1.75}
+.dtl .dr .dk{color:var(--navy);font-weight:700;flex-shrink:0;width:60px}
+.dtl .dr .dv{color:#46536A;flex:1}
+
+/* toast */
+.toast{
+  position:absolute;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translate(-50%,10px);
+  background:rgba(14,28,51,.95);color:#fff;font-size:12.5px;font-weight:500;
+  padding:9px 16px;border-radius:11px;opacity:0;pointer-events:none;
+  transition:all .22s;z-index:40;white-space:nowrap;letter-spacing:.2px;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* 生成中 */
+.loading{
+  margin:0 12px;background:#fff;border-radius:var(--r);padding:18px 16px;
+  box-shadow:var(--sh);border:1px solid #F0F3F8;
+}
+.loading .row{display:flex;align-items:center;gap:10px}
+.spin{
+  width:18px;height:18px;border-radius:50%;flex-shrink:0;
+  border:2px solid #DCE4F0;border-top-color:var(--navy3);
+  animation:sp .8s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading .tx{font-size:13px;font-weight:600;color:var(--navy)}
+.loading .sub{font-size:11px;color:var(--ink3);margin-top:8px;padding-left:28px}
+.loadbar{height:4px;background:#EDF0F6;border-radius:2px;margin-top:12px;overflow:hidden}
+.loadbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--navy3),var(--gold));border-radius:2px;transition:width .3s}
+.hidden{display:none!important}
+
+/* ============ AI 设置 ============ */
+.brand-tag .inner{cursor:pointer;transition:background .15s}
+.brand-tag .inner:active{background:rgba(217,174,85,.18)}
+.brand-tag .inner.ai-on{border-color:var(--gold);color:#132A4C;background:var(--gold)}
+.elapsed{
+  text-align:right;font-size:10.5px;color:var(--ink3);margin-top:9px;
+  font-variant-numeric:tabular-nums;
+}
+.err-ico{
+  width:18px;height:18px;border-radius:50%;background:#FDECE8;color:#E0563F;
+  font-size:12px;font-weight:800;display:grid;place-items:center;flex-shrink:0;
+}
+.err-tx{
+  padding-left:28px;color:#B4523F;line-height:1.6;word-break:break-word;
+  font-size:11.5px;margin-top:9px;
+}
+.err-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn-ghost{
+  font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);color:var(--ink2);
+  padding:9px 14px;border-radius:10px;transition:all .14s;
+}
+.btn-ghost:active{transform:scale(.96)}
+.btn-primary{
+  font-family:inherit;font-size:12.5px;font-weight:650;cursor:pointer;
+  background:var(--navy);border:none;color:#fff;
+  padding:10px 20px;border-radius:10px;
+}
+.btn-primary:active{transform:scale(.96)}
+.btn-primary:disabled{background:#8A94A6}
+.frow{margin-bottom:15px}
+.flbl{font-size:12px;font-weight:650;color:var(--ink);margin-bottom:7px}
+.fin{
+  width:100%;border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  padding:11px 13px;font-family:inherit;font-size:12.5px;color:var(--ink);
+}
+.fin:focus{outline:none;border-color:var(--navy3);box-shadow:0 0 0 3px rgba(40,69,111,.07)}
+.fin::placeholder{color:#B7C0CF}
+.cfg-note{
+  font-size:10.5px;line-height:1.7;color:var(--ink3);
+  background:#F7F9FC;border-radius:10px;padding:10px 12px;margin-top:4px;
+}
+.cfg-ok{color:#0F8A5F;font-weight:600}
+.cfg-bad{color:#C4402A;font-weight:600}
+.mode-hint{
+  text-align:center;font-size:11px;color:var(--ink3);margin-top:9px;
+}
+.mode-hint b{color:#8A6417;font-weight:600}
+.ai-chip{
+  display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:6px;background:#EAF7F0;color:#0F8A5F;margin-left:6px;
+  vertical-align:middle;
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="statusbar" id="statusbar">
+    COACHPRO 训练课助手
+    <div class="caps"><i></i><i></i><i></i><div class="ring"></div></div>
+  </div>
+
+  <!-- ============ 配置页 ============ -->
+  <div class="scroll" id="screen-config">
+    <div class="brand">
+      <div class="brand-top">
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#D9AE55" stroke-width="1.6" stroke-linejoin="round">
+            <path d="M12 2.6l2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 16.9l-5.6 3 1.1-6.3L2.9 9.2l6.3-.9z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">COACH<em>PRO</em></div>
+          <div class="brand-sub">ELITE TRAINING SYSTEM</div>
+        </div>
+      </div>
+      <div class="brand-tag">
+        <span>职业教练的私人课程设计师</span>
+        <span class="inner" id="cfgBtn">⚙ AI 设置</span>
+      </div>
+      <div class="brand-stats">
+        <div class="s"><div class="n">60s</div><div class="l">完成备课</div></div>
+        <div class="s"><div class="n">8 大</div><div class="l">运动项目</div></div>
+        <div class="s"><div class="n">4-60+</div><div class="l">少儿到成人</div></div>
+      </div>
+    </div>
+
+    <!-- 项目 -->
+    <div class="card">
+      <div class="lbl">项目</div>
+      <div class="grid4" id="projects"></div>
+    </div>
+
+    <!-- 需求 -->
+    <div class="card">
+      <div class="lbl">你的需求</div>
+      <textarea id="needs" placeholder="例如：10岁孩子运球一直低头，只会用右手，比赛中一被防守就慌。想让他们练好左右手运球，还要玩得开心。"></textarea>
+      <div class="tags" id="painTags"></div>
+    </div>
+
+    <!-- 年龄 -->
+    <div class="card">
+      <div class="lbl">学员年龄<span class="opt">（最小 ~ 最大）</span></div>
+      <div class="numrow">
+        <input class="num" id="ageMin" type="number" value="8" inputmode="numeric">
+        <span class="unit">岁 至</span>
+        <input class="num" id="ageMax" type="number" value="10" inputmode="numeric">
+        <span class="unit">岁</span>
+        <div class="spacer"></div>
+        <div class="stage" id="stageTag">小学</div>
+      </div>
+      <div class="tags" id="agePresets"></div>
+    </div>
+
+    <!-- 人数 -->
+    <div class="card">
+      <div class="lbl">人数<span class="opt">（最少 ~ 最多，人数固定就填一样）</span></div>
+      <div class="numrow">
+        <input class="num" id="cntMin" type="number" value="6" inputmode="numeric">
+        <span class="unit">至</span>
+        <input class="num" id="cntMax" type="number" value="6" inputmode="numeric">
+        <span class="unit">人</span>
+      </div>
+      <div class="tags" id="cntPresets"></div>
+    </div>
+
+    <!-- 时长 -->
+    <div class="card">
+      <div class="lbl">时长<span class="opt">（分钟）</span></div>
+      <div class="tags" id="durPresets"></div>
+    </div>
+
+    <!-- 教案内容 -->
+    <div class="card">
+      <div class="lbl">教案内容</div>
+      <div class="duo" id="detailPick">
+        <div class="d on" data-v="full"><div class="t">详细</div><div class="s">讲解完整</div></div>
+        <div class="d" data-v="lite"><div class="t">精简</div><div class="s">一眼看完</div></div>
+      </div>
+      <div style="height:1px;background:var(--line2);margin:15px 0 13px"></div>
+      <div class="lbl">场地条件<span class="opt">可选，不选按常规</span></div>
+      <div class="tags" id="venueTags"></div>
+      <div style="height:14px"></div>
+      <div class="lbl">可用教具<span class="opt">可选，可多选</span></div>
+      <div class="tags" id="equipTags"></div>
+    </div>
+
+    <button class="gen" id="genBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.4L19 9.4l-5.1 2L12 17l-1.9-5.6L5 9.4l5.1-2z"/><path d="M19 14l.9 2.6L22.5 17.5l-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z"/></svg>
+      生成专属训练课
+    </button>
+    <div class="mode-hint" id="modeHint"></div>
+    <div class="mine" id="mineBtn">
+      <div class="l">📁 我的教案<span id="mineCount">（0）</span></div>
+      <div class="r">查看 ›</div>
+    </div>
+    <div style="height:8px"></div>
+  </div>
+
+  <!-- ============ 生成中 ============ -->
+  <div class="scroll hidden" id="screen-loading">
+    <div style="height:14px"></div>
+    <div class="loading">
+      <div class="row">
+        <div class="spin"></div>
+        <div class="tx" id="loadTx">正在分析你的需求…</div>
+      </div>
+      <div class="sub" id="loadSub">识别运动项目 · 学员画像 · 训练目标</div>
+      <div class="loadbar"><i id="loadBar"></i></div>
+    </div>
+  </div>
+
+  <!-- ============ 结果页 ============ -->
+  <div class="plan-empty hidden" id="planEmpty">
+    <div class="pe-ico">🏀</div>
+    <div class="pe-t">左边填好信息，点「生成专属训练课」</div>
+    <div class="pe-s">教案和战术图会出现在这里</div>
+  </div>
+  <div class="scroll hidden" id="screen-plan"></div>
+
+  <!-- 详情弹层 -->
+  <div class="mask" id="mask"></div>
+  <div class="sheet" id="sheet">
+    <div class="grip"></div>
+    <div class="sh-head">
+      <div class="bd" id="shBadge">01</div>
+      <div class="h"><div class="n" id="shName">项目</div><div class="r" id="shRole">分类</div></div>
+      <button class="x" id="shClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="sh-body" id="shBody"></div>
+  </div>
+
+  <!-- AI 设置 -->
+  <div class="sheet" id="cfgSheet">
+    <div class="grip"></div>
+    <div class="sh-head">
+      <div class="h"><div class="n">接入 AI 模型</div><div class="r">任何 OpenAI 兼容接口都能接</div></div>
+      <button class="x" id="cfgClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="sh-body">
+      <div class="frow">
+        <div class="flbl">服务商</div>
+        <div class="tags" id="provChips"></div>
+      </div>
+      <div class="frow">
+        <div class="flbl">接口地址 Base URL</div>
+        <input class="fin" id="inBase" spellcheck="false" placeholder="https://api.deepseek.com/v1">
+      </div>
+      <div class="frow">
+        <div class="flbl">模型名</div>
+        <input class="fin" id="inModel" spellcheck="false" placeholder="deepseek-chat">
+      </div>
+      <div class="frow">
+        <div class="flbl">API Key</div>
+        <input class="fin" id="inKey" type="password" spellcheck="false" placeholder="sk-...">
+      </div>
+      <div class="frow">
+        <div class="flbl">访问令牌 <span style="font-weight:400;color:#94A3B8">（用公网隧道时填，本地可留空）</span></div>
+        <input class="fin" id="inToken" spellcheck="false" placeholder="留空则不校验">
+      </div>
+      <div class="cfg-note">Key 只保存在这台机器的浏览器 localStorage 里，不会上传到我的任何服务器。请求由浏览器直连服务商；如果提示 CORS 失败，改用 server.js 代理打开。</div>
+      <div class="err-actions">
+        <button class="btn-primary" id="cfgSave">保存</button>
+        <button class="btn-ghost" id="cfgTest">测试连接</button>
+      </div>
+      <div id="cfgStatus" style="margin-top:10px;font-size:11.5px;min-height:16px"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+"use strict";
+/* ==================================================================
+   一、基础数据
+   ================================================================== */
+const PALETTE = ["#1E3A5F","#2F6FE4","#EF8A3C","#2FA36B","#8256D0","#E0563F","#1DA3A3","#7C8798"];
+
+const AGES = [
+  {l:"2-3岁", a:[2,3]}, {l:"4-6岁", a:[4,6]}, {l:"7-9岁", a:[7,9]},
+  {l:"10-12岁", a:[10,12]}, {l:"13-15岁", a:[13,15]},
+  {l:"16-18岁", a:[16,18]}, {l:"成人", a:[19,30]}
+];
+const COUNTS = ["1人私教","6人","10人","15人","20人"];
+const DURS = [45,60,75,90,120];
+const VENUES = ["室内空地","室外场地","小空间","有器械区"];
+const EQUIPS = ["标志桶","敏捷梯","小栏架","跳绳","体操垫","标志盘"];
+
+const FOCUS_BB = {
+  "运球总低头看球":"抬头运球","只会用强侧手":"双手都能用","上篮步伐乱":"上篮步伐",
+  "投篮姿势不对":"投篮定型","不会传球只想自己打":"传球分享","防守不会滑步":"防守滑步",
+  "不会抢篮板":"篮板卡位","比赛中不敢出手":"敢出手"
+};
+const FOCUS_FIT = {
+  "身体协调性差":"协调性","跑步速度慢":"速度","耐力差容易累":"耐力","反应慢":"反应速度",
+  "核心力量弱":"核心力量","柔韧性差":"柔韧","弹跳力差":"弹跳","久坐体态不好":"体态"
+};
+
+/* ---------- 8 个项目 ---------- */
+const SPORTS = [
+{
+  id:"soccer", name:"足球", emoji:"⚽", kind:"pitch",
+  tags:["停球不稳","传球不准","不敢对抗","射门无力","不会跑位","只会用惯用脚","带球总低头","体能跟不上"],
+  warm:{name:"抢圈热身", role:"热身", desc:"4 个桶围成方圈，中间 1 人抢断，外围连续一脚传球。", goal:"活动关节、提高触球次数，建立抬头观察与快速出球的习惯"},
+  skills:[
+    {name:"三角传接球", role:"技术", desc:"三人成三角站位，传接后立刻换位，要求停球朝向出球方向。", goal:"解决传球不准与停球朝向问题，形成一脚出球的节奏"},
+    {name:"标志桶绕行变向", role:"技术", desc:"带球绕 6 个桶，最后一段加速向空当推进。", goal:"提高带球时的抬头习惯与变向重心控制"},
+    {name:"禁区外射门打点", role:"技术", desc:"在禁区弧顶设置 4 个目标点，轮流射门命中。", goal:"解决射门无力，强化支撑脚位置与摆腿发力顺序"}
+  ],
+  agility:{name:"敏捷梯碎步与折返", role:"灵敏", desc:"敏捷梯完成后立刻 5 米折返，节奏不停顿。", goal:"提升脚步频率、起动速度与连续变向能力"},
+  game:{name:"3v3 小场对抗", role:"比赛", desc:"小场地 3 对 3，规定进球前必须完成一次横传。", goal:"把技术和跑位放进真实对抗，培养对抗勇气与传跑默契"},
+  cool:{name:"静态拉伸与复盘", role:"放松", desc:"下肢为主静态拉伸，教练带 3 个问题回顾课堂。", goal:"降低肌肉紧张、巩固当天学习要点"}
+},
+{
+  id:"basketball", name:"篮球", emoji:"🏀", kind:"court",
+  tags:Object.keys(FOCUS_BB),
+  warm:{name:"动物园大冒险", role:"热身", desc:"听教练喊动物名，模仿动物跑过动物园。", goal:"活动关节、预防受伤；「听信号抬头」为后面的抬头运球做铺垫"},
+  skills:[
+    {name:"左手小火箭接力", role:"技术", desc:"只许用左手运球绕桶，往返接力，比哪组更快。", goal:"解决只会用强侧手的问题，用比赛让孩子愿意用左手、建立左手信心"},
+    {name:"抬头运球·信号通行", role:"技术", desc:"运球中看教练举起的颜色牌，喊出颜色后再变向。", goal:"强迫视线离开地面，形成抬头看人、看手势的习惯"},
+    {name:"护球摆脱 1v0", role:"技术", desc:"面对虚拟防守，做护球转身 + 换手摆脱再加速突破。", goal:"解决被防守逼近就慌，建立护球与换手的身体记忆"}
+  ],
+  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
+  power:{name:"标志盘跳格与落地控制", role:"力量", desc:"连续跳格练习，重点落在落地缓冲。", goal:"发展下肢爆发力、落地控制和身体协调"},
+  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 传球接力，先完成全队的获胜。", goal:"把器材变成规则，在竞争中练习沟通、跑位与决策"},
+  game2:{name:"1v1 攻防挑战赛", role:"比赛", desc:"半场 1 对 1，进攻限 8 秒，防守不许犯规。", goal:"在真实压力下检验运球、护球与终结能力"},
+  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点"}
+},
+{
+  id:"tennis", name:"网球", emoji:"🎾", kind:"grid",
+  tags:["正手动作变形","反手不敢打","发球不稳","脚步跟不上","击球点太晚","体能下降快"],
+  warm:{name:"小步频热身 + 挥拍激活", role:"热身", desc:"原地小步频、侧滑步交替，配合空挥正反手各 20 次。", goal:"升高体温、激活肩袖与髋部，为大幅度挥拍做准备"},
+  skills:[
+    {name:"正手定点对拉", role:"技术", desc:"固定落点连续对拉，要求击球点在身体侧前方。", goal:"解决击球点太晚，把击球点前移并稳定挥拍轨迹"},
+    {name:"反手双手扶稳", role:"技术", desc:"教练送球到反手位，用双手反拍连续回击 10 板不失误。", goal:"解决反手不敢打，建立双手反拍的稳定结构"},
+    {name:"发球抛球节奏", role:"技术", desc:"只练抛球与击球时机，抛球落点控制在身前一只拍面内。", goal:"解决发球不稳，把注意力放在抛球一致性上"}
+  ],
+  agility:{name:"米字步移动", role:"灵敏", desc:"以中心点为原点，向 8 个方向启动回位。", goal:"提升启动速度与回位意识，减少被调动后的空档"},
+  game:{name:"半场抢七对抗", role:"比赛", desc:"半场抢七，每分只能发一次，强调第一板进攻。", goal:"在比分压力下练习发球与前三板决策"},
+  cool:{name:"肩袖拉伸与放松", role:"放松", desc:"肩袖、前臂、髋屈肌静态拉伸各 30 秒。", goal:"预防肩肘劳损，加快恢复"}
+},
+{
+  id:"badminton", name:"羽毛球", emoji:"🏸", kind:"grid",
+  tags:["步伐混乱","高远球不到位","网前球不稳","杀球无力","反手弱","体能跟不上"],
+  warm:{name:"全场步法热身", role:"热身", desc:"沿场地四角做并步、交叉步、垫步组合，配合手腕绕环。", goal:"激活踝膝髋，建立场地空间感与步法节奏"},
+  skills:[
+    {name:"高远球发力链条", role:"技术", desc:"固定位置连续高远球，强调蹬地转体带动上肢。", goal:"解决高远球不到位，把发力顺序从手臂改为全身链条"},
+    {name:"网前搓球控网", role:"技术", desc:"上网搓球，要求球过网即下坠、贴网落地。", goal:"提高网前手感与手上控制，减少挑高被进攻"},
+    {name:"反手挑球稳定", role:"技术", desc:"反手位连续挑直线与斜线，落点到底线两角。", goal:"解决反手弱，建立反手挑球的固定动作"}
+  ],
+  agility:{name:"米字步 + 启动", role:"灵敏", desc:"中心点出发，六点触线后回位，每组 20 秒。", goal:"提升启动第一步与回中心的速度"},
+  game:{name:"21 分制单打对抗", role:"比赛", desc:"21 分制，规定每局至少 5 次网前球。", goal:"把步法与网前技术放进实战节奏"},
+  cool:{name:"肩肘腕拉伸", role:"放松", desc:"肩、肘、腕、腰背依次拉伸，配合深呼吸。", goal:"缓解上肢疲劳，预防网球肘类劳损"}
+},
+{
+  id:"pingpong", name:"乒乓球", emoji:"🏓", kind:"grid",
+  tags:["正手不稳","反手推挡弱","发球单一","脚步慢","接发球判断差","连续性差"],
+  warm:{name:"徒手挥拍 + 小跳", role:"热身", desc:"正反手徒手挥拍各 30 次，配合原地小跳与转腰。", goal:"激活腰髋与肩部，建立挥拍节奏"},
+  skills:[
+    {name:"正手攻球定型", role:"技术", desc:"多球定点正手攻，连续 30 板不失误。", goal:"解决正手不稳，固定引拍幅度与击球点"},
+    {name:"反手推挡对抗", role:"技术", desc:"反手推挡连续对拉，逐步加速。", goal:"解决反手推挡弱，提高借力与还原速度"},
+    {name:"发球变化组合", role:"技术", desc:"同一动作发出下旋、不转、侧旋三种球。", goal:"解决发球单一，让对手难以判断旋转"}
+  ],
+  agility:{name:"侧滑步 + 还原", role:"灵敏", desc:"左右侧滑步摸台角，每次回中心位。", goal:"提高步法覆盖范围与击球后的快速还原"},
+  game:{name:"11 分制对抗", role:"比赛", desc:"11 分制，每局必须使用两种不同发球。", goal:"检验发球变化与相持中的连续性"},
+  cool:{name:"肩颈放松", role:"放松", desc:"肩颈、前臂、腰背拉伸，眼球远眺放松。", goal:"缓解长时间低头与单侧发力带来的紧张"}
+},
+{
+  id:"volleyball", name:"排球", emoji:"🏐", kind:"grid",
+  tags:["垫球不稳","发球失误多","不敢扣球","站位混乱","传球不到位","弹跳不足"],
+  warm:{name:"动态拉伸 + 传球手感", role:"热身", desc:"肩腕踝动态拉伸后，两人一组对传 3 分钟。", goal:"激活肩关节与手指手腕，找回球感"},
+  skills:[
+    {name:"垫球稳定性", role:"技术", desc:"对墙连续垫球，要求落点集中在一平方米内。", goal:"解决垫球不稳，固定手臂平面与蹬送节奏"},
+    {name:"上手传球到位", role:"技术", desc:"从后排向 3 号位传球，落点控制在网前一米。", goal:"解决传球不到位，建立手型与发力方向"},
+    {name:"发球过网稳定性", role:"技术", desc:"连续发球 10 个，要求 8 个以上过网进区。", goal:"解决发球失误多，用目标区降低冒险"}
+  ],
+  agility:{name:"前后移动与起动", role:"灵敏", desc:"3 米线到端线折返，配合起动信号。", goal:"提升起动与移动速度，改善站位到位率"},
+  game:{name:"6v6 轮转对抗", role:"比赛", desc:"轮转制对抗，每球必须三次触球过网。", goal:"在轮转中理解站位与协作，敢于参与进攻"},
+  cool:{name:"肩背放松", role:"放松", desc:"肩袖、背部、大腿后侧拉伸。", goal:"缓解扣球与垫球的重复负荷"}
+},
+{
+  id:"swim", name:"游泳", emoji:"🏊", kind:"grid",
+  tags:["换气不顺","打腿无力","身体下沉","划水效率低","耐力不足","动作不协调"],
+  warm:{name:"陆上热身 + 水中适应", role:"热身", desc:"陆上 5 分钟关节活动，入水后 100 米轻松游适应。", goal:"升高体温、适应水温，预防抽筋"},
+  skills:[
+    {name:"换气节奏", role:"技术", desc:"扶板打腿，每 3 次划手换一次气，强调水下均匀呼气。", goal:"解决换气不顺，建立水下呼气、水上吸气的节奏"},
+    {name:"打腿效率", role:"技术", desc:"扶板 25 米打腿，要求频率稳定、脚背绷直。", goal:"解决打腿无力，提高推进效率与身体位置"},
+    {name:"划手入水与抱水", role:"技术", desc:"分解练习入水点与高肘抱水，配合划水路线。", goal:"解决划水效率低，增加每次划手的推进距离"}
+  ],
+  agility:{name:"出发与转身", role:"灵敏", desc:"蹬边出发 + 25 米转身练习各 6 组。", goal:"提升出发爆发与转身后的水下推进"},
+  game:{name:"25 米计时挑战", role:"比赛", desc:"25 米计时，记录每人成绩并挑战个人最好。", goal:"用计时把技术练习转化为可量化的进步感"},
+  cool:{name:"水中放松与拉伸", role:"放松", desc:"水中慢游放松，陆上拉伸肩背与小腿。", goal:"降低肌肉紧张，加快恢复"}
+},
+{
+  id:"fitness", name:"体能", emoji:"🏃", kind:"grid",
+  tags:Object.keys(FOCUS_FIT),
+  warm:{name:"动物模仿动态热身", role:"热身", desc:"用模仿动物移动完成全身动态热身。", goal:"激活全身关节和肌肉，提高课堂兴趣，建立听口令停走的安全习惯"},
+  skills:[
+    {name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
+    {name:"垫上平衡与核心控制", role:"技术", desc:"在体操垫上完成单脚站立、爬行和滚转组合。", goal:"提升静态平衡、核心稳定、身体控制和胆小孩子的自信心"},
+    {name:"标志盘跳格与落地控制", role:"技术", desc:"通过连续跳格练习发展弹跳和落地稳定。", goal:"发展下肢爆发力、落地控制和身体协调"},
+    {name:"信号变向追逐", role:"技术", desc:"听颜色和方向信号做快速变向跑。", goal:"提升反应速度、变向协调、听觉注意力和空间躲避能力"}
+  ],
+  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
+  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 器材接力，全队完成最快者胜。", goal:"把器材变成规则，在竞争中练习沟通与执行力"},
+  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点"}
+}
+];
+
+/* ==================================================================
+   二、生成引擎（规则 + 模板，纯函数，便于测试）
+   ================================================================== */
+function stageOf(age){
+  if(age <= 3) return "幼儿";
+  if(age <= 6) return "学前";
+  if(age <= 12) return "小学";
+  if(age <= 15) return "初中";
+  if(age <= 18) return "高中";
+  return "成人";
+}
+function campName(sport, age){
+  if(sport.id === "basketball"){
+    if(age <= 8) return "小小运球侠训练营";
+    if(age <= 12) return "少年控卫进阶营";
+    if(age <= 15) return "实战能力强化营";
+    return "成人实战训练营";
+  }
+  const st = stageOf(age);
+  return st === "成人" ? sport.name + "成人实战训练营" : sport.name + st + "训练营";
+}
+function focusList(sport, tags){
+  const map = sport.id === "basketball" ? FOCUS_BB : (sport.id === "fitness" ? FOCUS_FIT : null);
+  return tags.map(t => (map && map[t]) ? map[t] : t);
+}
+function pickItems(sport, dur, tags){
+  const items = [];
+  items.push(sport.warm);
+  const sk = sport.skills.slice();
+  // 痛点匹配：优先选名称里含有痛点关键词的技能项
+  if(tags && tags.length){
+    sk.sort((a,b)=>{
+      const sa = tags.some(t => a.name.indexOf(t)>=0) ? -1 : 0;
+      const sb = tags.some(t => b.name.indexOf(t)>=0) ? -1 : 0;
+      return sa - sb;
+    });
+  }
+  const wantSkill = dur >= 120 ? 3 : (dur >= 60 ? 2 : 1);
+  sk.slice(0, wantSkill).forEach(x => items.push(x));
+  if(dur >= 75 && sport.agility) items.push(sport.agility);
+  if(dur >= 90 && sport.power) items.push(sport.power);
+  if(sport.game) items.push(sport.game);
+  if(dur >= 120 && sport.game2) items.push(sport.game2);
+  items.push(sport.cool);
+  return items;
+}
+function allocTime(items, dur){
+  const mins = new Array(items.length).fill(0);
+  const warmIdx = [], coolIdx = [], otherIdx = [];
+  items.forEach((it, i) => {
+    if(it.role === "热身") warmIdx.push(i);
+    else if(it.role === "放松") coolIdx.push(i);
+    else otherIdx.push(i);
+  });
+  function spread(idxArr, total){
+    if(!idxArr.length) return 0;
+    const base = Math.floor(total / idxArr.length);
+    const rem = total - base * idxArr.length;
+    idxArr.forEach((i, k) => { mins[i] = base + (k < rem ? 1 : 0); });
+    return total;
+  }
+  const warmTotal = warmIdx.length ? Math.max(5, Math.round(dur * 0.15)) : 0;
+  const coolTotal = coolIdx.length ? Math.max(3, Math.round(dur * 0.08)) : 0;
+  const used = spread(warmIdx, warmTotal) + spread(coolIdx, coolTotal);
+  spread(otherIdx, dur - used);
+  // 兜底：主体项目为空时，差额补给热身
+  const diff = dur - mins.reduce((a, b) => a + b, 0);
+  if(diff !== 0){
+    const t = otherIdx.length ? otherIdx[0] : (warmIdx.length ? warmIdx[0] : 0);
+    mins[t] += diff;
+  }
+  return mins;
+}
+function buildAnalysis(sport, cfg){
+  const st = stageOf(cfg.ageMax);
+  const fixed = cfg.cntMin === cfg.cntMax;
+  const who = st === "成人"
+    ? (cfg.cntMin + "~" + cfg.cntMax + "名成人学员")
+    : (cfg.cntMin + "~" + cfg.cntMax + "名 " + cfg.ageMin + "-" + cfg.ageMax + " 岁" + st + "学员");
+  const hasNeed = (cfg.needs || "").trim().length > 0 || (cfg.tags && cfg.tags.length > 0);
+  const needTxt = hasNeed
+    ? "需求中明确提到「" + esc(summarizeNeed(cfg)) + "」"
+    : "需求未填写具体问题";
+  return who + "，人数" + (fixed ? "固定" : "不固定") + "；" + needTxt +
+    "，未说明具体基础、性别、身高体型或特殊情况，因此按同龄学员常见差异处理：默认有好动、胆小、基础弱和协调性较好的孩子混班，所有项目都准备了" +
+    "<b>降阶</b>和<b>进阶</b>两个版本。";
+}
+function summarizeNeed(cfg){
+  const parts = [];
+  if((cfg.needs||"").trim()) parts.push((cfg.needs||"").trim().slice(0,26));
+  if(cfg.tags && cfg.tags.length) parts.push(cfg.tags.slice(0,3).join("、"));
+  return parts.join("；");
+}
+function buildGrouping(sport, cfg){
+  const n = cfg.cntMax;
+  if(n <= 1){
+    return "私教课，1 名学员。整节课按「示范 → 跟做 → 计时挑战」三段推进；教练全程贴身示范，每个项目做 2-3 组，组间补水和即时反馈。";
+  }
+  if(n <= 3){
+    return "按最多 " + n + " 人准备；教练亲自参与做陪练和对手，所有对抗改限时挑战赛，保证每人练习量充足。每组轮换时教练负责计时与纠错。";
+  }
+  const g = n <= 6 ? 2 : (n <= 12 ? 3 : 4);
+  const per = Math.ceil(n / g);
+  return "按最多 " + n + " 人准备；整节课分 " + g + " 组，每组 " + per + " 人。练习时同组排队轮换，<b>强弱混搭</b>；比赛时每组再分成 2 个小队，" +
+    (per >= 2 ? "2v2 或 3v3" : "1v1") + "；如人数不足则按实际人数重新编组，教练补位。";
+}
+function buildGoals(sport, cfg){
+  const fl = focusList(sport, cfg.tags || []);
+  const base = ["①掌握本节课的核心技术动作，能在慢速下稳定完成；②在对抗或计时中敢于使用；③通过游戏化练习提高参与度"];
+  if(fl.length){
+    return "①" + fl[0] + "：敢用、能用，动作不走形；" +
+      (fl[1] ? "②" + fl[1] + "：在对抗压力下仍能保持稳定；" : "②能在比赛情境中主动使用该技术；") +
+      "③在规则简单、安全有序的环境中完成跑、跳、变向、停起和协作任务。";
+  }
+  return base[0] + "。";
+}
+function buildEquip(sport, cfg){
+  const picked = cfg.equips || [];
+  const base = {
+    basketball: "篮球 " + Math.max(1, Math.min(cfg.cntMax, 10)) + " 个（建议 5 号球，多备 2 个）、标志桶 12 个、红蓝号码背心各 3 件、哨子 1 个、计时器 1 个、记分纸和笔 1 套、水杯或水壶",
+    soccer: "足球 " + Math.max(1, Math.min(cfg.cntMax, 10)) + " 个、标志桶 12 个、分队背心若干、哨子 1 个、计时器 1 个、水杯或水壶",
+    tennis: "球拍（自备）、训练球 30 个、标志盘 8 个、弹力带 2 条、水杯或水壶",
+    badminton: "球拍（自备）、羽毛球 1 筒、标志桶 6 个、水杯或水壶",
+    pingpong: "球拍（自备）、乒乓球 20 个、多球盆 1 个、毛巾 1 条",
+    volleyball: "排球 " + Math.max(1, Math.min(cfg.cntMax, 10)) + " 个、标志桶 6 个、网与网柱、哨子 1 个",
+    swim: "泳镜、泳帽、浮板若干、计时器 1 个、水杯",
+    fitness: "标志桶 10 个、敏捷梯 2 条、体操垫 6 张、标志盘 20 个、哨子 1 个、计时器 1 个"
+  }[sport.id] || "标志桶 10 个、标志盘 20 个、哨子 1 个、计时器 1 个";
+  const extra = picked.filter(p => base.indexOf(p) < 0);
+  return base + (extra.length ? "；另备 " + extra.join("、") : "") + "。按满员准备，人少时按比例减少。";
+}
+function buildVenue(sport, cfg){
+  if(cfg.venue){
+    const m = {
+      "室内空地": "室内空地，划出中间主训练区、左右两条通道和终点触发区；器材之间至少留 1.5~2 米间距，垫子边缘压实，避免互相碰撞。",
+      "室外场地": "室外场地，注意地面平整与风向；器材摆放在阴影区，训练前检查地面有无积水和碎石。",
+      "小空间": "小空间（约 6×8 米），采用单人排队式练习，减少同时上场人数；对抗环节改为限时挑战，避免拥挤碰撞。",
+      "有器械区": "有器械区，先做器械安全说明，再分组轮换；每个器械点配 1 名小组长负责计数。"
+    };
+    return m[cfg.venue];
+  }
+  if(sport.id === "basketball") return "半场或全场均可。以半场为例：划出中间主训练区、左右两条通道和终点触发区；器材之间至少留 1.5~2 米间距，敏捷梯平放不滑动，体操垫边缘压实，避免孩子互相碰撞。";
+  if(sport.id === "swim") return "标准泳道，按水平分道；每条泳道不超过 4 人，教练站在池边可同时观察全道的位置。";
+  if(sport.kind === "pitch") return "标准半场，用标志桶划出 20×30 米训练区，四周留 2 米缓冲区。";
+  return "室内空地约 15×12 米，按项目需要划出练习区与安全缓冲区，器材间距不少于 1.5 米。";
+}
+
+function generatePlan(cfg){
+  const sport = SPORTS.find(s => s.id === cfg.sport) || SPORTS[1];
+  const items0 = pickItems(sport, cfg.duration, cfg.tags);
+  const mins = allocTime(items0, cfg.duration);
+  const items = items0.map((it, i) => ({
+    idx: i,
+    name: it.name,
+    role: it.role,
+    desc: it.desc,
+    goal: it.goal,
+    min: mins[i],
+    color: PALETTE[i % PALETTE.length]
+  }));
+  const fl = focusList(sport, cfg.tags || []);
+  const themeCore = fl.length ? fl.slice(0,3).join("·") : (sport.name + "综合能力");
+  const theme = themeCore + "（" + campName(sport, cfg.ageMax) + "）";
+  const totalMin = mins.reduce((a,b)=>a+b,0);
+  return {
+    sport,
+    theme,
+    analysis: buildAnalysis(sport, cfg),
+    grouping: buildGrouping(sport, cfg),
+    goals: buildGoals(sport, cfg),
+    equip: buildEquip(sport, cfg),
+    venue: buildVenue(sport, cfg),
+    items,
+    totalMin,
+    detail: cfg.detail,
+    cfg
+  };
+}
+
+/* ==================================================================
+   三、战术图（SVG）
+   ================================================================== */
+function courtMarkup(kind){
+  if(kind === "court"){
+    const L = 'stroke="#FFFFFF" stroke-opacity=".85" fill="none" stroke-width="1.6"';
+    return '' +
+      '<defs><linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#C79A62"/><stop offset="50%" stop-color="#BC8C55"/><stop offset="100%" stop-color="#C79A62"/>' +
+      '</linearGradient></defs>' +
+      '<rect width="400" height="260" fill="url(#wood)"/>' +
+      '<rect x="8" y="8" width="384" height="244" ' + L + '/>' +
+      '<line x1="200" y1="8" x2="200" y2="252" ' + L + '/>' +
+      '<circle cx="200" cy="130" r="27" ' + L + '/>' +
+      '<rect x="8" y="88" width="62" height="84" ' + L + '/>' +
+      '<circle cx="70" cy="130" r="26" ' + L + '/>' +
+      '<rect x="330" y="88" width="62" height="84" ' + L + '/>' +
+      '<circle cx="330" cy="130" r="26" ' + L + '/>' +
+      '<path d="M8 26 L44 26 A 112 112 0 0 1 44 234 L8 234" ' + L + '/>' +
+      '<path d="M392 26 L356 26 A 112 112 0 0 0 356 234 L392 234" ' + L + '/>' +
+      '<line x1="16" y1="112" x2="16" y2="148" stroke="#F0F0F0" stroke-width="2.4"/>' +
+      '<line x1="384" y1="112" x2="384" y2="148" stroke="#F0F0F0" stroke-width="2.4"/>' +
+      '<circle cx="20" cy="130" r="4.5" fill="none" stroke="#E9743F" stroke-width="2"/>' +
+      '<circle cx="380" cy="130" r="4.5" fill="none" stroke="#E9743F" stroke-width="2"/>';
+  }
+  if(kind === "pitch"){
+    const L = 'stroke="#FFFFFF" stroke-opacity=".8" fill="none" stroke-width="1.6"';
+    return '<rect width="400" height="260" fill="#3E8B57"/>' +
+      '<rect x="8" y="8" width="384" height="244" ' + L + '/>' +
+      '<line x1="200" y1="8" x2="200" y2="252" ' + L + '/>' +
+      '<circle cx="200" cy="130" r="32" ' + L + '/>' +
+      '<rect x="8" y="70" width="52" height="120" ' + L + '/>' +
+      '<rect x="340" y="70" width="52" height="120" ' + L + '/>' +
+      '<rect x="8" y="106" width="20" height="48" ' + L + '/>' +
+      '<rect x="372" y="106" width="20" height="48" ' + L + '/>';
+  }
+  // grid：通用训练区
+  const L = 'stroke="#FFFFFF" stroke-opacity=".5" fill="none" stroke-width="1.4" stroke-dasharray="5 5"';
+  return '<defs><linearGradient id="gh" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#2C4A78"/><stop offset="100%" stop-color="#1B3155"/>' +
+    '</linearGradient></defs>' +
+    '<rect width="400" height="260" fill="url(#gh)"/>' +
+    '<rect x="14" y="14" width="372" height="232" rx="10" ' + L + '/>' +
+    '<line x1="14" y1="130" x2="386" y2="130" ' + L + '/>' +
+    '<line x1="200" y1="14" x2="200" y2="246" ' + L + '/>';
+}
+
+/* 生成分步图：根据项目角色给出布局 */
+function buildSteps(item, n){
+  const cy = 130, kindRole = item.role;
+  const seq = [];
+  if(kindRole === "热身"){
+    seq.push({
+      cap: "听口令从起点线出发，慢跑到活动区",
+      players: [[300,70],[300,105],[300,140],[300,175],[300,210]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [[290,70,140,70],[290,105,140,105],[290,140,140,140],[290,175,140,175],[290,210,140,210]],
+      rects: [{x:60,y:48,w:110,h:32,label:"热身活动区"}],
+      coach: {x:200,y:34}
+    });
+    seq.push({
+      cap: "到达后散开成半圆，前后间隔约 1 米",
+      players: [[90,190],[140,175],[190,165],[240,175],[290,190],[190,205]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [], rects: [{x:60,y:145,w:250,h:70,label:"半圆站位"}], coach: {x:190,y:118}
+    });
+    seq.push({
+      cap: "做 2 轮听口令「红灯停、绿灯跑」，结束喝水 2 分钟",
+      players: [[120,80],[170,80],[220,80],[270,80]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [[120,95,120,150],[170,95,170,150],[220,95,220,150],[270,95,270,150]],
+      rects: [], coach: {x:330,y:130}
+    });
+  } else if(kindRole === "放松"){
+    seq.push({
+      cap: "围成圈坐下，依次放松主要肌群",
+      players: [[120,100],[160,90],[200,88],[240,90],[280,100],[200,175]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [], rects: [{x:95,y:70,w:215,h:130,label:"放松圈"}], coach: {x:200,y:130}
+    });
+  } else if(kindRole === "比赛"){
+    seq.push({
+      cap: "按红蓝分队，从各自半场开始",
+      players: [[120,110],[120,150],[150,130],[280,110],[280,150],[250,130]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:i<3?"r":"b"})),
+      arrows: [], rects: [{x:60,y:85,w:110,h:90,label:"进攻区"},{x:230,y:85,w:110,h:90,label:"防守区"}], coach: {x:200,y:36}
+    });
+    seq.push({
+      cap: "按颜色信号跑位，传球接力完成一轮",
+      players: [[120,110],[120,150],[150,130],[280,110],[280,150],[250,130]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:i<3?"r":"b"})),
+      arrows: [[150,130,240,110],[240,110,270,150],[120,110,120,60]],
+      rects: [{x:90,y:52,w:60,h:26,label:"信号区"}], coach: {x:200,y:36}
+    });
+    seq.push({
+      cap: "全队完成最快者获胜，计时 3 轮",
+      players: [[200,60],[200,95],[200,130],[200,165],[200,200]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:i%2?"b":"r"})),
+      arrows: [[200,60,200,200]], rects: [], coach: {x:330,y:130}
+    });
+  } else {
+    seq.push({
+      cap: "示范动作要点，全队观察",
+      players: [[320,70],[320,110],[320,150],[320,190]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [], rects: [{x:70,y:95,w:120,h:70,label:"示范区"}], coach: {x:150,y:130}
+    });
+    seq.push({
+      cap: "分两批依次练习，教练逐个纠错",
+      players: [[300,90],[300,135],[300,180]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [[290,90,130,90],[290,135,130,135],[290,180,130,180]],
+      rects: [{x:70,y:70,w:110,h:130,label:"练习通道"}], coach: {x:200,y:44}
+    });
+    seq.push({
+      cap: "加计时或加防守，逐步提高强度",
+      players: [[120,130],[120,170],[160,150]].map((p,i)=>({n:i+1,x:p[0],y:p[1],t:"r"})),
+      arrows: [[110,130,190,105],[190,105,110,170]],
+      rects: [], coach: {x:250,y:130}
+    });
+  }
+  return seq;
+}
+
+const ARROW_STYLE = {
+  run:     { stroke:"#FFFFFF", dash:"6 5", marker:"ah-w" },
+  dribble: { stroke:"#F0A93F", dash:"",    marker:"ah-o" },
+  pass:    { stroke:"#E8C77A", dash:"2 4", marker:"ah-g" },
+  shoot:   { stroke:"#E9664A", dash:"",    marker:"ah-r" }
+};
+
+/* 优先用 AI 画的步骤；没有就用本地布局引擎兜底 */
+function stepsOf(item){
+  if(item && Array.isArray(item.steps) && item.steps.length) return item.steps;
+  return buildSteps(item, 3);
+}
+
+function renderDiagram(kind, item, step){
+  const steps = stepsOf(item);
+  const s = steps[Math.min(step, steps.length - 1)];
+  let g = "";
+  (s.rects || []).forEach(r => {
+    g += '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h +
+      '" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="5 5" rx="4"/>' +
+      '<text x="' + (r.x + 5) + '" y="' + (r.y - 5) + '" fill="#E4ECF8" font-size="9.5" font-family="sans-serif">' + esc(r.label || "") + '</text>';
+  });
+  (s.arrows || []).forEach(a => {
+    let ar = a;
+    if(Array.isArray(ar)) ar = { x1:ar[0], y1:ar[1], x2:ar[2], y2:ar[3], t:"run" };
+    const st = ARROW_STYLE[ar.t] || ARROW_STYLE.run;
+    const dash = st.dash ? ' stroke-dasharray="' + st.dash + '"' : "";
+    g += '<line x1="' + ar.x1 + '" y1="' + ar.y1 + '" x2="' + ar.x2 + '" y2="' + ar.y2 +
+      '" stroke="' + st.stroke + '" stroke-opacity=".95" stroke-width="2"' + dash +
+      ' marker-end="url(#' + st.marker + ')"/>';
+  });
+  (s.players || []).forEach(p => {
+    const fill = p.t === "b" ? "#2F6FE4" : "#D8382F";
+    g += '<g><circle cx="' + p.x + '" cy="' + p.y + '" r="11" fill="' + fill +
+      '" stroke="#fff" stroke-width="2"/>' +
+      '<text x="' + p.x + '" y="' + (p.y + 4) + '" text-anchor="middle" fill="#fff" font-size="10.5" font-weight="700" font-family="sans-serif">' + p.n + '</text></g>';
+  });
+  if(s.coach){
+    g += '<g><circle cx="' + s.coach.x + '" cy="' + s.coach.y + '" r="11" fill="#111" stroke="#fff" stroke-width="2"/>' +
+      '<text x="' + s.coach.x + '" y="' + (s.coach.y + 4) + '" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="sans-serif">C</text></g>';
+  }
+  const marker = (id, color) =>
+    '<marker id="' + id + '" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">' +
+    '<path d="M0,0 L6,3 L0,6 Z" fill="' + color + '"/></marker>';
+  return '<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' + marker("ah-w", "#FFFFFF") + marker("ah-o", "#F0A93F") +
+    marker("ah-g", "#E8C77A") + marker("ah-r", "#E9664A") + '</defs>' +
+    courtMarkup(kind) + g +
+    '<text x="392" y="252" text-anchor="end" fill="#FFFFFF" fill-opacity=".45" font-size="8" font-family="sans-serif">COACHPRO</text>' +
+    '</svg>';
+}
+
+/* ==================================================================
+   四、状态
+   ================================================================== */
+const state = {
+  sport: "basketball",
+  tags: [],
+  ageMin: 8, ageMax: 10,
+  cntMin: 6, cntMax: 6,
+  duration: 90,
+  detail: "full",
+  venue: "",
+  equips: [],
+  plan: null,
+  mine: [],
+  step: 0,
+  curItem: null
+};
+
+/* ==================================================================
+   五、DOM 渲染（浏览器环境）
+   ================================================================== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 1700);
+}
+
+function renderProjects(){
+  const box = $("projects");
+  box.innerHTML = SPORTS.map(s =>
+    '<div class="proj' + (state.sport === s.id ? " on" : "") + '" data-id="' + s.id + '">' +
+    '<div class="e">' + s.emoji + '</div><div class="t">' + s.name + '</div></div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".proj"), el => {
+    el.onclick = () => {
+      state.sport = el.dataset.id;
+      state.tags = [];
+      renderProjects();
+      renderPainTags();
+    };
+  });
+}
+function curSport(){ return SPORTS.find(s => s.id === state.sport) || SPORTS[1]; }
+
+function renderPainTags(){
+  const box = $("painTags");
+  box.innerHTML = curSport().tags.map(t =>
+    '<div class="tag' + (state.tags.indexOf(t) >= 0 ? " on" : "") + '" data-t="' + esc(t) + '">' + esc(t) + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => {
+      const t = el.dataset.t;
+      const i = state.tags.indexOf(t);
+      if(i >= 0) state.tags.splice(i,1); else state.tags.push(t);
+      renderPainTags();
+    };
+  });
+}
+function renderAgePresets(){
+  const box = $("agePresets");
+  box.innerHTML = AGES.map(a =>
+    '<div class="tag' + (state.ageMin === a.a[0] && state.ageMax === a.a[1] ? " on" : "") +
+    '" data-a="' + a.a.join(",") + '">' + a.l + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => {
+      const p = el.dataset.a.split(",").map(Number);
+      state.ageMin = p[0]; state.ageMax = p[1];
+      $("ageMin").value = p[0]; $("ageMax").value = p[1];
+      $("stageTag").textContent = stageOf(p[1]);
+      renderAgePresets();
+    };
+  });
+}
+function renderCntPresets(){
+  const box = $("cntPresets");
+  box.innerHTML = COUNTS.map(c => {
+    const n = c === "1人私教" ? 1 : parseInt(c, 10);
+    const on = state.cntMin === n && state.cntMax === n;
+    return '<div class="tag' + (on ? " on" : "") + '" data-n="' + n + '">' + c + '</div>';
+  }).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => {
+      const n = Number(el.dataset.n);
+      state.cntMin = n; state.cntMax = n;
+      $("cntMin").value = n; $("cntMax").value = n;
+      renderCntPresets();
+    };
+  });
+}
+function renderDur(){
+  const box = $("durPresets");
+  box.innerHTML = DURS.map(d =>
+    '<div class="tag' + (state.duration === d ? " on" : "") + '" data-d="' + d + '">' + d + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => { state.duration = Number(el.dataset.d); renderDur(); };
+  });
+}
+function renderVenue(){
+  const box = $("venueTags");
+  box.innerHTML = VENUES.map(v =>
+    '<div class="tag' + (state.venue === v ? " on" : "") + '" data-v="' + v + '">' + v + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => {
+      state.venue = state.venue === el.dataset.v ? "" : el.dataset.v;
+      renderVenue();
+    };
+  });
+}
+function renderEquips(){
+  const box = $("equipTags");
+  box.innerHTML = EQUIPS.map(e =>
+    '<div class="tag' + (state.equips.indexOf(e) >= 0 ? " on" : "") + '" data-e="' + e + '">' + e + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => {
+      const e = el.dataset.e;
+      const i = state.equips.indexOf(e);
+      if(i >= 0) state.equips.splice(i,1); else state.equips.push(e);
+      renderEquips();
+    };
+  });
+}
+
+/* ---------- 生成流程 ---------- */
+/* ==================================================================
+   三·五、AI 接入层（OpenAI 兼容接口）
+   ================================================================== */
+const PROVIDERS = [
+  {id:"deepseek", name:"DeepSeek",   base:"https://api.deepseek.com/v1",                        model:"deepseek-chat"},
+  {id:"openai",   name:"OpenAI",     base:"https://api.openai.com/v1",                           model:"gpt-4o-mini"},
+  {id:"qwen",     name:"通义千问",   base:"https://dashscope.aliyuncs.com/compatible-mode/v1",    model:"qwen-plus"},
+  {id:"zhipu",    name:"智谱 GLM",   base:"https://open.bigmodel.cn/api/paas/v4",                 model:"glm-4-flash"},
+  {id:"moonshot", name:"Kimi",       base:"https://api.moonshot.cn/v1",                           model:"moonshot-v1-8k"},
+  {id:"ollama",   name:"本地 Ollama",base:"http://localhost:11434/v1",                            model:"qwen2.5:7b"},
+  {id:"proxy",    name:"本地代理",   base:"http://localhost:8787",                                model:"deepseek-chat"},
+  {id:"custom",   name:"自定义",     base:"",                                                     model:""}
+];
+
+/* 代理地址：从 http(s) 打开时用当前 origin，这样手机访问局域网 IP 也能对上 */
+function proxyBase(){
+  try {
+    if(typeof location !== "undefined" && /^https?:$/.test(location.protocol)) return location.origin;
+  } catch(e){}
+  return "http://localhost:8787";
+}
+
+const AI = {
+  provider: "deepseek", base: "", model: "", key: "", token: "",
+  load(){
+    try {
+      const s = JSON.parse(localStorage.getItem("coachpro_ai") || "{}");
+      if(s.provider) this.provider = s.provider;
+      if(typeof s.base === "string") this.base = s.base;
+      if(typeof s.model === "string") this.model = s.model;
+      if(typeof s.key === "string") this.key = s.key;
+      if(typeof s.token === "string") this.token = s.token;
+    } catch(e){}
+    if(this.provider === "proxy") this.base = proxyBase();
+    if(!this.base){
+      const p = PROVIDERS.find(x => x.id === this.provider);
+      if(p){ this.base = p.base; this.model = this.model || p.model; }
+    }
+  },
+  save(){
+    try {
+      localStorage.setItem("coachpro_ai", JSON.stringify({
+        provider:this.provider, base:this.base, model:this.model, key:this.key, token:this.token
+      }));
+    } catch(e){}
+  },
+  ready(){
+    if(!this.base || !this.model) return false;
+    if(this.provider === "ollama" || this.provider === "proxy") return true;
+    return !!this.key;
+  },
+  label(){
+    const p = PROVIDERS.find(x => x.id === this.provider);
+    return (p ? p.name : "自定义") + " · " + (this.model || "未设模型");
+  }
+};
+
+const SYS_PROMPT = [
+"你是一位有 15 年青训经验的中国篮球 / 体能教练，同时也是课程设计师。你写的教案会被教练直接带到场地上照着念、照着做。",
+"",
+"写作要求：",
+"1. 具体可执行。要写「手掌压垫、屁股别翘太高」「膝盖微屈、小步轻落」「口令短促」这类动作细节；禁止写「提升综合素质」「激发运动兴趣」这类空话。",
+"2. 语气像教练在场边说话，短句为主。",
+"3. 每个训练项目必须包含五段：简介、组织、规则/玩法、教练要点、解决问题。",
+"4. 项目 name 不要带「技术：」「热身：」这类前缀，role 字段已经标注了分类。直接写「抬头运球 + 弱手突破」。",
+"5. 分组人数必须和总人数算得过来。",
+"6. 所有项目的 minutes 相加必须严格等于课时总长。",
+"7. 顺序固定且必须齐全：热身（1 个）→ 技术/体能主项（2~4 个）→ 对抗/比赛（至少 1 个）→ 放松（必须，放在最后）。缺任何一段都不合格。",
+"9. 单个项目时长不得超过总时长的 25%。60 分钟的课给 5~6 个项目，90 分钟给 7~8 个，45 分钟给 4~5 个。",
+"8. 8 岁以下不要安排负重、深蹲跳、大量落地冲击的动作。",
+"",
+"【战术图——这一部分最容易做错，严格照做】",
+"战术图画的是「这一刻球场上谁在哪、往哪动」，不是静态站位图。规则：",
+"- 坐标系 400 × 260，原点左上。x 从左到右，y 从上到下。篮球场左篮筐 x≈20，右篮筐 x≈380，中线 x=200。",
+"- 每一步 players 给 4~8 个球员，按实际分组画。比如「分 2 组每组 4 人」就画 8 个：前 4 个 team=\"r\"，后 4 个 team=\"b\"。不要只画 2-3 个代表。",
+"- 每一步 arrows 至少 1 条，通常 2~5 条。没有箭头的步骤等于没画，绝对不允许。",
+"- 箭头用 from / to 指向球员号码，不要写坐标。type 必须选对：运球 dribble、传球 pass、跑位 run、投篮 shoot。",
+"- 第 1 步画起始站位（可以有 1 条箭头表示起动方向），从第 2 步起要能明显看出球员在移动。",
+"- 每个项目给 3 个步骤，不要只给 2 步。",
+"- zones 可选，用来标「动物园」「练习通道」「标志桶区」这类区域，最多 2 个。",
+"- coach 给教练位置，站在能看到全队的地方，不要压在中线上。",
+"",
+"一个合格的步骤长这样（分 2 组、每组 2 人，练折返跑）：",
+'{"cap":"两人一组同时出发，跑到标志桶折返","players":[{"n":1,"x":300,"y":90,"team":"r"},{"n":2,"x":300,"y":130,"team":"r"},{"n":3,"x":300,"y":170,"team":"b"},{"n":4,"x":300,"y":210,"team":"b"}],"arrows":[{"from":1,"to":2,"type":"run"},{"from":3,"to":4,"type":"run"}],"zones":[{"x":70,"y":70,"w":80,"h":130,"label":"折返线"}],"coach":{"x":180,"y":40}}',
+"",
+"【输出体积】必须紧凑：JSON 不要缩进、不要换行美化，一行输出。文字上限：analysis/grouping/goals/equipment/venue 每个字段不超过 120 字，detail 五段每段不超过 40 字，desc 不超过 25 字。",
+"只输出 JSON，不要解释、不要 markdown 代码块。结构：",
+'{"theme":"课程主题（含定位短语和训练营名）","analysis":"学员分析","grouping":"分组方案","goals":"训练目标","equipment":"器材准备","venue":"场地布置",',
+' "items":[{"name":"项目名（不要带分类前缀）","role":"热身|技术|灵敏|力量|比赛|放松","minutes":12,"desc":"一句话说明","goal":"解决的问题",',
+' "detail":{"intro":"简介","org":"组织","rules":"规则/玩法","coach":"教练要点","fix":"解决问题"},',
+' "steps":[步骤对象，格式见上面示例]}]}'
+].join("\n");
+
+function buildUserPrompt(cfg){
+  const sp = SPORTS.find(s => s.id === cfg.sport) || SPORTS[1];
+  const st = stageOf(cfg.ageMax);
+  const L = [];
+  L.push("运动项目：" + sp.name);
+  L.push("学员：" + cfg.ageMin + "-" + cfg.ageMax + " 岁（" + st + "），共 " + cfg.cntMin + "-" + cfg.cntMax + " 人" +
+    (cfg.cntMin === cfg.cntMax ? "（人数固定）" : "（人数浮动）"));
+  L.push("课时总长：" + cfg.duration + " 分钟 —— 所有项目 minutes 相加必须正好等于 " + cfg.duration);
+  L.push("教案详略：" + (cfg.detail === "full" ? "详细" : "精简"));
+  if(cfg.tags && cfg.tags.length) L.push("主要问题：" + cfg.tags.join("、"));
+  if((cfg.needs || "").trim()) L.push("教练补充需求：" + cfg.needs.trim());
+  if(cfg.venue) L.push("场地条件：" + cfg.venue);
+  if(cfg.equips && cfg.equips.length) L.push("可用教具：" + cfg.equips.join("、"));
+  L.push("");
+  const want = cfg.duration <= 45 ? 5 : cfg.duration <= 60 ? 6 : cfg.duration <= 90 ? 7 : 9;
+  const capMin = Math.max(8, Math.round(cfg.duration * 0.25));
+  L.push("项目数量：正好 " + want + " 个（必须包含 1 个比赛/对抗项目 和 1 个最后的放松项目）。");
+  L.push("单个项目时长不超过 " + capMin + " 分钟，所有项目加总必须等于 " + cfg.duration + "。");
+  L.push("每个项目给 3 个战术步骤，每步至少 1 条箭头。");
+  return L.join("\n");
+}
+
+async function callLLM(cfg, systemOverride, maxTokens, noJsonFlag){
+  const url = (AI.base || "").replace(/\/+$/, "") + "/chat/completions";
+  const headers = { "Content-Type": "application/json" };
+  if(AI.key) headers["Authorization"] = "Bearer " + AI.key;
+  if(AI.token) headers["X-Access-Token"] = AI.token;
+  const body = {
+    model: AI.model,
+    messages: [
+      { role: "system", content: systemOverride || SYS_PROMPT },
+      { role: "user", content: buildUserPrompt(cfg) }
+    ],
+    temperature: 0.75,
+    max_tokens: maxTokens || 8000
+  };
+  if(!noJsonFlag && (AI.provider === "deepseek" || AI.provider === "openai" || AI.provider === "zhipu")){
+    body.response_format = { type: "json_object" };
+  }
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 150000);
+  let res;
+  try {
+    res = await fetch(url, { method:"POST", headers, body: JSON.stringify(body), signal: ctrl.signal });
+  } catch(err){
+    clearTimeout(to);
+    if(err.name === "AbortError") throw new Error("请求超时（150 秒）。模型太慢或网络不通。");
+    throw new Error("请求发不出去：" + err.message +
+      "。常见原因：① Base URL 写错 ② 浏览器被 CORS 拦截（改用 server.js 启动可绕过）");
+  }
+  clearTimeout(to);
+  const text = await res.text();
+  if(!res.ok){
+    let msg = text.slice(0, 300);
+    try {
+      const j = JSON.parse(text);
+      msg = (j.error && (j.error.message || j.error.code)) || (j.message) || msg;
+    } catch(e){}
+    if(res.status === 401 && String(msg).indexOf("访问令牌") < 0) msg = "API Key 无效或已过期（401）。" + msg;
+    if(res.status === 402) msg = "账户余额不足（402）。" + msg;
+    if(res.status === 429) msg = "触发限流（429），等一下再试。" + msg;
+    throw new Error("接口返回 " + res.status + "：" + msg);
+  }
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e){ throw new Error("接口返回的不是 JSON：" + text.slice(0, 200)); }
+  const choice = data && data.choices && data.choices[0];
+  if(!choice) throw new Error("模型没有返回内容（可能被内容策略拦截）");
+  if(choice.finish_reason === "length"){
+    throw new Error("模型输出被截断（达到 token 上限），教案不完整。点重试，或在设置里换一个上下文更大的模型。");
+  }
+  const content = choice.message && choice.message.content;
+  if(!content) throw new Error("模型没有返回内容");
+  return content;
+}
+
+/* 从模型输出里抠出 JSON，容忍代码块包裹、尾逗号、被截断 */
+function parseLLMJson(text){
+  let s = String(text).trim();
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  const a = s.indexOf("{"), b = s.lastIndexOf("}");
+  if(a >= 0 && b > a) s = s.slice(a, b + 1);
+  try { return JSON.parse(s); } catch(e){}
+  const t = s.replace(/,\s*([}\]])/g, "$1");
+  try { return JSON.parse(t); } catch(e){}
+  // 补右括号
+  let depth = 0, inStr = false, escp = false, needBrace = 0, needBrack = 0;
+  const stack = [];
+  for(const ch of t){
+    if(escp){ escp = false; continue; }
+    if(ch === "\\"){ escp = true; continue; }
+    if(ch === '"'){ inStr = !inStr; continue; }
+    if(inStr) continue;
+    if(ch === "{"){ stack.push("}"); }
+    else if(ch === "["){ stack.push("]"); }
+    else if(ch === "}" || ch === "]"){ stack.pop(); }
+  }
+  let pad = "";
+  for(let i = stack.length - 1; i >= 0; i--) pad += stack[i];
+  if(pad){
+    try { return JSON.parse(t + pad); } catch(e){}
+  }
+  throw new Error("模型返回的 JSON 解析失败（可能被截断）。点重试，或把模型换成上下文更长的。");
+}
+
+const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || lo));
+
+/* 校验战术步骤：坐标夹紧、箭头按球员编号解析 */
+function normalizeSteps(raw){
+  if(!Array.isArray(raw) || !raw.length) return null;
+  const out = [];
+  raw.slice(0, 6).forEach((s, si) => {
+    if(!s || typeof s !== "object") return;
+    const plays = [];
+    (Array.isArray(s.players) ? s.players : []).slice(0, 8).forEach((p, i) => {
+      if(!p) return;
+      plays.push({
+        n: Number(p.n) || (i + 1),
+        x: clampN(p.x, 18, 382),
+        y: clampN(p.y, 18, 242),
+        t: p.team === "b" ? "b" : "r"
+      });
+    });
+    if(!plays.length) return;
+    const byN = {};
+    plays.forEach(p => { byN[p.n] = p; });
+    const arrows = [];
+    (Array.isArray(s.arrows) ? s.arrows : []).forEach(a => {
+      if(!a) return;
+      if(Array.isArray(a) && a.length === 4){
+        arrows.push({ x1:clampN(a[0],0,400), y1:clampN(a[1],0,260), x2:clampN(a[2],0,400), y2:clampN(a[3],0,260), t:"run" });
+        return;
+      }
+      const f = byN[Number(a.from)], t2 = byN[Number(a.to)];
+      if(f && t2 && f !== t2){
+        const type = ["run","dribble","pass","shoot"].indexOf(a.type) >= 0 ? a.type : "run";
+        arrows.push({ x1:f.x, y1:f.y, x2:t2.x, y2:t2.y, t:type });
+      }
+    });
+    const rects = [];
+    (Array.isArray(s.zones) ? s.zones : []).forEach(z => {
+      if(!z) return;
+      const w = clampN(z.w, 24, 360), h = clampN(z.h, 24, 220);
+      rects.push({
+        x: clampN(z.x, 6, 394 - w), y: clampN(z.y, 6, 254 - h),
+        w: w, h: h, label: String(z.label || "").slice(0, 10)
+      });
+    });
+    const coach = (s.coach && isFinite(Number(s.coach.x)))
+      ? { x: clampN(s.coach.x, 18, 382), y: clampN(s.coach.y, 18, 242) } : null;
+    out.push({
+      cap: String(s.cap || ("第 " + (si + 1) + " 步")).slice(0, 60),
+      players: plays, arrows, rects, coach
+    });
+  });
+  return out.length ? out : null;
+}
+
+/* 把模型输出规整成渲染器认识的结构 */
+function normalizePlan(raw, cfg){
+  const sport = SPORTS.find(s => s.id === cfg.sport) || SPORTS[1];
+  const rawItems = Array.isArray(raw.items) ? raw.items.slice(0, 9) : [];
+  if(!rawItems.length) throw new Error("模型没有返回训练项目（items 为空）");
+  const items = rawItems.map((it, i) => {
+    const d = it.detail || {};
+    return {
+      idx: i,
+      name: String(it.name || ("训练项目 " + (i + 1))).slice(0, 26),
+      role: String(it.role || "技术").slice(0, 6),
+      min: Math.max(1, Math.round(Number(it.minutes) || 1)),
+      desc: String(it.desc || "").slice(0, 160),
+      goal: String(it.goal || "").slice(0, 200),
+      detail: {
+        intro: String(d.intro || it.desc || ""),
+        org: String(d.org || ""),
+        rules: String(d.rules || ""),
+        coach: String(d.coach || ""),
+        fix: String(d.fix || it.goal || "")
+      },
+      steps: normalizeSteps(it.steps),
+      color: PALETTE[i % PALETTE.length]
+    };
+  });
+  // 时长对齐到总时长
+  let sum = items.reduce((a, b) => a + b.min, 0);
+  let guard = 0;
+  while(sum !== cfg.duration && guard++ < 400){
+    if(sum > cfg.duration){
+      let big = items[0];
+      items.forEach(x => { if(x.min > big.min) big = x; });
+      if(big.min <= 1) break;
+      big.min--; sum--;
+    } else {
+      // 优先给非热身/放松的项目
+      const mid = items.filter(x => x.role !== "热身" && x.role !== "放松");
+      const t = mid.length ? mid[0] : items[0];
+      t.min++; sum++;
+    }
+  }
+  return {
+    source: "ai",
+    sport,
+    theme: String(raw.theme || "").slice(0, 60) || (sport.name + "训练课"),
+    analysis: String(raw.analysis || ""),
+    grouping: String(raw.grouping || ""),
+    goals: String(raw.goals || ""),
+    equip: String(raw.equipment || raw.equip || ""),
+    venue: String(raw.venue || ""),
+    items, totalMin: sum, detail: cfg.detail, cfg
+  };
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* 折叠屏 / 平板是否走双栏 */
+function isWide(){
+  try { return window.matchMedia("(min-width:600px)").matches; } catch(e){ return false; }
+}
+
+/* ---------- 加载 / 错误态 ---------- */
+const LOAD_STEPS = [
+  ["正在分析你的需求…", "识别运动项目 · 学员画像 · 训练目标"],
+  ["正在设计训练项目和战术图…", "计算时间分配 · 安排项目顺序"],
+  ["正在绘制战术跑位…", "校验坐标 · 生成分步动画"]
+];
+let loadTimers = [];
+function clearLoadTimers(){ loadTimers.forEach(t => clearInterval(t)); loadTimers = []; }
+
+function showLoading(){
+  $("screen-loading").innerHTML =
+    '<div style="height:14px"></div>' +
+    '<div class="loading">' +
+      '<div class="row"><div class="spin"></div><div class="tx" id="loadTx">' + LOAD_STEPS[0][0] + '</div></div>' +
+      '<div class="sub" id="loadSub">' + LOAD_STEPS[0][1] + '</div>' +
+      '<div class="loadbar"><i id="loadBar"></i></div>' +
+      '<div class="elapsed" id="loadSec">0 秒</div>' +
+    '</div>';
+  $("loadBar").style.width = "10%";
+  const t0 = Date.now();
+  let si = 0;
+  loadTimers.push(setInterval(() => {
+    const el = $("loadSec");
+    if(el) el.textContent = Math.round((Date.now() - t0) / 1000) + " 秒";
+  }, 500));
+  loadTimers.push(setInterval(() => {
+    si = Math.min(si + 1, LOAD_STEPS.length - 1);
+    const tx = $("loadTx"), sb = $("loadSub"), bar = $("loadBar");
+    if(tx) tx.textContent = LOAD_STEPS[si][0];
+    if(sb) sb.textContent = LOAD_STEPS[si][1];
+    if(bar) bar.style.width = (10 + si * 26) + "%";
+  }, 4200));
+}
+
+function showLoadError(msg, cfg){
+  clearLoadTimers();
+  $("screen-loading").innerHTML =
+    '<div style="height:14px"></div>' +
+    '<div class="loading">' +
+      '<div class="row"><div class="err-ico">!</div><div class="tx">生成失败</div></div>' +
+      '<div class="err-tx">' + esc(msg) + '</div>' +
+      '<div class="err-actions">' +
+        '<button class="btn-primary" id="errRetry">重试</button>' +
+        '<button class="btn-ghost" id="errOffline">离线生成</button>' +
+        '<button class="btn-ghost" id="errCfg">检查设置</button>' +
+      '</div>' +
+    '</div>';
+  $("errRetry").onclick = () => startGenerate();
+  $("errOffline").onclick = () => {
+    state.plan = generatePlan(cfg);
+    state.plan.source = "offline";
+    state.mine.push(state.plan);
+    updateMineCount();
+    gotoPlan();
+  };
+  $("errCfg").onclick = openCfg;
+}
+
+function gotoPlan(){
+  clearLoadTimers();
+  renderPlan();
+  $("screen-loading").classList.add("hidden");
+  if(isWide()){
+    $("planEmpty").classList.add("hidden");
+  } else {
+    $("screen-config").classList.add("hidden");
+    $("statusbar").classList.add("hidden");
+  }
+  $("screen-plan").classList.remove("hidden");
+}
+
+async function startGenerate(){
+  const cfg = collectCfg();
+  if(isWide()){
+    $("planEmpty").classList.add("hidden");
+    $("screen-plan").classList.add("hidden");
+  } else {
+    $("screen-config").classList.add("hidden");
+  }
+  $("screen-loading").classList.remove("hidden");
+  $("statusbar").classList.add("hidden");
+  showLoading();
+  try {
+    if(AI.ready()){
+      const text = await callLLM(cfg);
+      const raw = parseLLMJson(text);
+      state.plan = normalizePlan(raw, cfg);
+    } else {
+      await sleep(700);
+      state.plan = generatePlan(cfg);
+      state.plan.source = "offline";
+    }
+    state.mine.push(state.plan);
+    updateMineCount();
+    gotoPlan();
+    if(state.plan.source === "offline") toast("未接入 AI，已用离线模板生成");
+  } catch(e){
+    showLoadError(e && e.message ? e.message : String(e), cfg);
+  }
+}
+function collectCfg(){
+  const clamp = (v, d) => { const n = parseInt(v, 10); return isNaN(n) ? d : n; };
+  const a1 = clamp($("ageMin").value, 8), a2 = clamp($("ageMax").value, 10);
+  const c1 = clamp($("cntMin").value, 6), c2 = clamp($("cntMax").value, 6);
+  return {
+    sport: state.sport,
+    tags: state.tags.slice(),
+    needs: $("needs").value,
+    ageMin: Math.min(a1, a2), ageMax: Math.max(a1, a2),
+    cntMin: Math.min(c1, c2), cntMax: Math.max(c1, c2),
+    duration: state.duration,
+    detail: state.detail,
+    venue: state.venue,
+    equips: state.equips.slice()
+  };
+}
+
+/* ---------- 结果页 ---------- */
+function renderPlan(){
+  const p = state.plan;
+  const segTotal = p.items.reduce((a,b)=>a+b.min, 0);
+  let seg = '<div class="seg">';
+  p.items.forEach(it => {
+    seg += '<i style="width:' + (it.min / segTotal * 100) + '%;background:' + it.color + '"></i>';
+  });
+  seg += "</div>";
+
+  let html = '';
+  html += '<div class="pbar">';
+  html += '<div class="back" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12l7 7"/></svg></div>';
+  html += '<div class="ttl">训练教案' +
+    (p.source === "ai"
+      ? '<span class="ai-chip">AI</span>'
+      : '<span class="ai-chip" style="background:#F0F2F6;color:#8792A4">离线</span>') +
+    '</div>';
+  html += '<button class="mini" id="copyBtn">复制</button>';
+  html += '<button class="mini gold" id="regenBtn">换一版</button>';
+  html += '</div>';
+
+  const isAI = p.source === "ai";
+  html += '<div class="card">';
+  html += '<div class="theme">课程主题：' + esc(p.theme) + '</div>';
+
+  if(p.detail === "full"){
+    html += block("学员分析", p.analysis, isAI);
+    html += block("分组方案", p.grouping, isAI);
+  }
+  html += block("训练目标", p.goals, isAI);
+  html += block("器材准备", p.equip, isAI);
+  html += block("场地", p.venue, isAI);
+
+  html += seg;
+  html += '<div class="segnote">共 ' + p.items.length + ' 个训练项目 · ' + p.totalMin + ' 分钟 · 点开查看详情和战术动画</div>';
+  html += '</div>';
+
+  p.items.forEach(it => { html += itemMarkup(it); });
+  html += '<div style="height:14px"></div>';
+
+  $("screen-plan").innerHTML = html;
+  bindPlan();
+}
+function block(k, v, isAI){
+  const body = isAI ? esc(v || "").replace(/\n/g, "<br>") : v;
+  return '<div class="block"><div class="bk">' + k + '</div><div class="bv">' + body + '</div></div>';
+}
+function itemMarkup(it){
+  const n = String(it.idx + 1).padStart(2, "0");
+  return '<div class="item" data-idx="' + it.idx + '">' +
+    '<div class="item-head">' +
+      '<div class="badge" style="background:' + it.color + '">' + n + '</div>' +
+      '<div class="item-main"><div class="item-name">' + esc(it.name) + '</div>' +
+      '<div class="item-role">' + esc(it.role) + '</div></div>' +
+      '<div class="item-min">' + it.min + ' 分钟</div>' +
+    '</div>' +
+    '<div class="item-desc">' + esc(it.desc) + '</div>' +
+    '<div class="item-goal"><b>🎯</b> ' + esc(it.goal) + '</div>' +
+    '<div class="item-foot"><span>点击查看详情和战术动画</span><span class="arrow">›</span></div>' +
+  '</div>';
+}
+function bindPlan(){
+  $("backBtn").onclick = () => {
+    $("screen-plan").classList.add("hidden");
+    if(isWide()){
+      $("planEmpty").classList.remove("hidden");
+    } else {
+      $("screen-config").classList.remove("hidden");
+      $("statusbar").classList.remove("hidden");
+    }
+  };
+  $("regenBtn").onclick = () => startGenerate();
+  $("copyBtn").onclick = () => {
+    const txt = planToText(state.plan);
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(() => toast("教案已复制"), () => toast("复制失败"));
+    } else {
+      toast("当前环境不支持复制");
+    }
+  };
+  Array.prototype.forEach.call($("screen-plan").querySelectorAll(".item"), el => {
+    el.onclick = () => openDetail(Number(el.dataset.idx));
+  });
+}
+function planToText(p){
+  let s = "【课程主题】" + p.theme + "\n\n";
+  if(p.detail === "full"){
+    s += "【学员分析】" + stripTags(p.analysis) + "\n\n";
+    s += "【分组方案】" + stripTags(p.grouping) + "\n\n";
+  }
+  s += "【训练目标】" + p.goals + "\n\n";
+  s += "【器材准备】" + p.equip + "\n\n";
+  s += "【场地】" + p.venue + "\n\n";
+  s += "【训练项目】共 " + p.items.length + " 项 · " + p.totalMin + " 分钟\n";
+  p.items.forEach((it,i) => {
+    s += (i+1) + ". " + it.name + "（" + it.role + "）" + it.min + " 分钟\n   " + it.desc + "\n   目标：" + it.goal + "\n";
+  });
+  return s;
+}
+function stripTags(s){ return String(s).replace(/<[^>]+>/g, ""); }
+
+/* ---------- 项目详情 + 战术图 ---------- */
+function openDetail(idx){
+  const it = state.plan.items[idx];
+  state.curItem = it;
+  state.step = 0;
+  $("shBadge").textContent = String(idx + 1).padStart(2, "0");
+  $("shBadge").style.background = it.color;
+  $("shName").textContent = it.name;
+  $("shRole").textContent = it.role + " · " + it.min + " 分钟";
+  renderSheetBody();
+  $("mask").classList.add("on");
+  $("sheet").classList.add("on");
+}
+function closeDetail(){
+  $("mask").classList.remove("on");
+  $("sheet").classList.remove("on");
+}
+function renderSheetBody(){
+  const it = state.curItem;
+  const kind = curSport().kind;
+  const steps = stepsOf(it);
+  const s = steps[Math.min(state.step, steps.length - 1)];
+  let dots = "";
+  steps.forEach((_, i) => {
+    dots += '<div class="dot' + (i === state.step ? " on" : "") + '" data-s="' + i + '">' + (i + 1) + '</div>';
+  });
+  let html = '';
+  html += '<div class="edit"><input id="editInput" placeholder="想怎么改？可不填，直接点就换一个">' +
+    '<button id="editBtn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>修改</button></div>';
+
+  html += '<div class="dia">';
+  html += '<div class="dia-top">' + renderDiagram(kind, it, state.step) +
+    '<div class="stepno">第 ' + (state.step + 1) + ' / ' + steps.length + ' 步</div></div>';
+  html += '<div class="dia-cap"><div class="cap"><div class="cn">' + (state.step + 1) + '</div><div>' + esc(s.cap) + '</div></div></div>';
+  html += '<div class="dia-ctrl">' +
+      '<button class="nav" id="prevStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12l7 7"/></svg></button>' +
+      '<div class="dots">' + dots + '</div>' +
+      '<button class="nav" id="nextStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>' +
+    '</div>';
+  html += '<div class="legend"><span><i></i>跑位</span><span><i class="s1"></i>带球/运球</span><span><i class="s2"></i>传球/击球</span><span><i class="s3"></i>射门/扣杀</span></div>';
+  html += '</div>';
+
+  html += '<div class="dtl">';
+  const d = it.detail;
+  if(d && (d.org || d.rules || d.coach)){
+    if(d.intro) html += dtlRow("简介", d.intro);
+    if(d.org)   html += dtlRow("组织", d.org);
+    if(d.rules) html += dtlRow("规则/玩法", d.rules);
+    if(d.coach) html += dtlRow("教练要点", d.coach);
+    if(d.fix)   html += dtlRow("解决问题", d.fix);
+  } else {
+    html += dtlRow("简介", it.desc);
+    html += dtlRow("组织", "全队按能力分成 " + (state.plan.cfg.cntMax <= 3 ? 1 : 2) + " 组，组内排队轮换；教练站在能同时看到全队的位置，先讲清规则再开始，示范不超过 30 秒。");
+    html += dtlRow("规则/玩法", "按教练口令依次完成，每个动作做 30 秒，动作间原地调整 20 秒；做错不罚，重做一次即可，保证课堂节奏不断。");
+    html += dtlRow("教练要点", "口令短促、示范准确、随时纠错；对胆小的孩子降低难度，对基础好的孩子加计时或加防守。");
+    html += dtlRow("解决问题", it.goal);
+  }
+  html += '</div>';
+
+  $("shBody").innerHTML = html;
+  bindSheet(steps.length);
+}
+function dtlRow(k, v){
+  return '<div class="dr"><div class="dk">' + k + '</div><div class="dv">' + esc(v) + '</div></div>';
+}
+function bindSheet(total){
+  $("prevStep").onclick = () => { state.step = (state.step - 1 + total) % total; renderSheetBody(); };
+  $("nextStep").onclick = () => { state.step = (state.step + 1) % total; renderSheetBody(); };
+  Array.prototype.forEach.call($("shBody").querySelectorAll(".dot"), el => {
+    el.onclick = () => { state.step = Number(el.dataset.s); renderSheetBody(); };
+  });
+  $("editBtn").onclick = () => {
+    const v = ($("editInput").value || "").trim();
+    if(!v){ toast("换个玩法，已重新生成"); state.step = 0; renderSheetBody(); return; }
+    // 本地规则：把用户的修改意见回写到目标与描述里
+    const it = state.curItem;
+    it.goal = it.goal + "（教练要求：" + v + "）";
+    toast("已按「" + v.slice(0,10) + "」调整");
+    $("editInput").value = "";
+    renderSheetBody();
+    renderPlan();
+  };
+}
+
+/* ---------- 我的教案 ---------- */
+function updateMineCount(){
+  $("mineCount").textContent = "（" + state.mine.length + "）";
+}
+
+/* ==================================================================
+   六、初始化
+   ================================================================== */
+function init(){
+  renderProjects();
+  renderPainTags();
+  renderAgePresets();
+  renderCntPresets();
+  renderDur();
+  renderVenue();
+  renderEquips();
+  updateMineCount();
+
+  $("ageMin").oninput = $("ageMax").oninput = function(){
+    const a = parseInt($("ageMin").value,10) || 0, b = parseInt($("ageMax").value,10) || 0;
+    $("stageTag").textContent = stageOf(Math.max(a,b));
+    renderAgePresets();
+  };
+  $("cntMin").oninput = $("cntMax").oninput = function(){ renderCntPresets(); };
+
+  Array.prototype.forEach.call($("detailPick").querySelectorAll(".d"), el => {
+    el.onclick = () => {
+      state.detail = el.dataset.v;
+      Array.prototype.forEach.call($("detailPick").querySelectorAll(".d"), x => x.classList.remove("on"));
+      el.classList.add("on");
+    };
+  });
+
+  $("genBtn").onclick = startGenerate;
+  $("mineBtn").onclick = () => {
+    if(!state.mine.length){ toast("还没有教案，先生成一节"); return; }
+    state.plan = state.mine[state.mine.length - 1];
+    renderPlan();
+    $("screen-config").classList.add("hidden");
+    $("screen-plan").classList.remove("hidden");
+    $("statusbar").classList.add("hidden");
+  };
+  $("mask").onclick = function(){ closeDetail(); closeCfg(); };
+  $("shClose").onclick = closeDetail;
+
+  /* AI 设置绑定 */
+  AI.load();
+  /* 支持用 ?t=令牌 打开，自动记住并清理地址栏 */
+  try {
+    const u = new URL(location.href);
+    const tk = u.searchParams.get("t");
+    if(tk){
+      AI.token = tk;
+      AI.save();
+      u.searchParams.delete("t");
+      history.replaceState(null, "", u.toString());
+    }
+  } catch(e){}
+  $("cfgBtn").onclick = openCfg;
+  $("cfgClose").onclick = closeCfg;
+  $("cfgSave").onclick = function(){ saveCfg(false); closeCfg(); };
+  $("cfgTest").onclick = testConnection;
+  updateModeHint();
+  autoDetectProxy();
+  if(isWide() && state.mine.length === 0) $("planEmpty").classList.remove("hidden");
+
+  /* ?demo=1 预览模式：用离线引擎直接出教案，方便看排版、不消耗额度 */
+  try {
+    const q = new URLSearchParams(location.search);
+    if(q.get("demo")){
+      state.plan = generatePlan(collectCfg());
+      state.plan.source = "offline";
+      gotoPlan();
+    }
+  } catch(e){}
+}
+
+/* ---------- AI 设置面板 ---------- */
+function renderProvChips(){
+  const box = $("provChips");
+  box.innerHTML = PROVIDERS.map(p =>
+    '<div class="tag' + (AI.provider === p.id ? " on" : "") + '" data-p="' + p.id + '">' + p.name + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = function(){
+      AI.provider = el.dataset.p;
+      const p = PROVIDERS.find(x => x.id === AI.provider);
+      if(p && p.base){
+        $("inBase").value = (p.id === "proxy" ? proxyBase() : p.base);
+        $("inModel").value = p.model;
+      }
+      renderProvChips();
+    };
+  });
+}
+function syncCfgForm(){
+  $("inBase").value = AI.base || "";
+  $("inModel").value = AI.model || "";
+  $("inKey").value = AI.key || "";
+  $("inToken").value = AI.token || "";
+  $("cfgStatus").innerHTML = "";
+  renderProvChips();
+}
+function openCfg(){
+  syncCfgForm();
+  $("mask").classList.add("on");
+  $("cfgSheet").classList.add("on");
+}
+function closeCfg(){
+  $("mask").classList.remove("on");
+  $("cfgSheet").classList.remove("on");
+}
+function saveCfg(silent){
+  AI.base = ($("inBase").value || "").trim().replace(/\/+$/, "");
+  AI.model = ($("inModel").value || "").trim();
+  AI.key = ($("inKey").value || "").trim();
+  AI.token = ($("inToken").value || "").trim();
+  AI.save();
+  updateModeHint();
+  if(!silent) toast("设置已保存");
+}
+async function testConnection(){
+  saveCfg(true);
+  const st = $("cfgStatus");
+  if(!AI.base || !AI.model){ st.innerHTML = '<span class="cfg-bad">先填 Base URL 和模型名</span>'; return; }
+  st.innerHTML = '<span style="color:#8A94A6">正在连接 ' + esc(AI.label()) + ' …</span>';
+  try {
+    const txt = await callLLM({
+      sport:"basketball", tags:[], needs:"", ageMin:8, ageMax:10,
+      cntMin:6, cntMax:6, duration:60, detail:"full", venue:"", equips:[]
+    }, "你是连通性测试助手。只回复两个字：可以", 20, true);
+    st.innerHTML = '<span class="cfg-ok">✅ 连通成功</span> <span style="color:#8492A6">模型回复：' + esc(String(txt).slice(0, 24)) + '</span>';
+  } catch(e){
+    st.innerHTML = '<span class="cfg-bad">❌ 连接失败</span><br><span style="color:#8492A6;font-size:11px">' + esc(e.message || String(e)) + '</span>';
+  }
+}
+function updateModeHint(){
+  const el = $("modeHint"), btn = $("cfgBtn");
+  if(!el) return;
+  if(AI.ready()){
+    el.innerHTML = '已接入 <b>' + esc(AI.label()) + '</b> · 由 AI 现场设计';
+    if(btn){ btn.classList.add("ai-on"); btn.textContent = "⚙ AI 已接入"; }
+  } else {
+    el.innerHTML = '未接入 AI，当前用离线模板 · 点右上角 ⚙ 接入';
+    if(btn){ btn.classList.remove("ai-on"); btn.textContent = "⚙ AI 设置"; }
+  }
+}
+
+/* 如果页面是用 server.js 打开的，且服务器已配好 Key，就自动接入代理 */
+function autoDetectProxy(){
+  if(typeof location === "undefined" || !/^https?:$/.test(location.protocol)) return;
+  if(AI.ready()) return;
+  let done = false;
+  const timer = setTimeout(() => { if(!done) done = true; }, 4000);
+  fetch(location.origin + "/health", { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      if(!j || !j.ok) return;
+      AI.provider = "proxy";
+      AI.base = location.origin;
+      AI.model = AI.model || "deepseek-chat";
+      AI.key = "";
+      AI.save();
+      updateModeHint();
+      if(j.keyConfigured) toast("已自动接入");
+      else toast("已接入服务器，但服务器还没配 Key");
+    })
+    .catch(() => { done = true; clearTimeout(timer); });
+}
+
+if(typeof document !== "undefined") init();
+
+/* 供 Node 测试 */
+if(typeof module !== "undefined" && module.exports){
+  module.exports = { SPORTS, generatePlan, stageOf, buildSteps, pickItems, allocTime,
+    renderDiagram, courtMarkup, stepsOf, AI, PROVIDERS, parseLLMJson, normalizePlan,
+    normalizeSteps, callLLM, buildUserPrompt, SYS_PROMPT };
+}
+</script>
+</body>
+</html>
