@@ -2221,13 +2221,24 @@ function init(){
   autoDetectProxy();
   if(isWide() && state.mine.length === 0) $("planEmpty").classList.remove("hidden");
 
-  /* ?demo=1 预览模式：用离线引擎直接出教案，方便看排版、不消耗额度 */
+  /* 调试参数：?demo=1 离线出教案  ?open=N 直接打开第 N 个项目  ?scroll=N 滚动位置 */
   try {
     const q = new URLSearchParams(location.search);
+    const sv = q.get("scroll");
+    if(sv){
+      setTimeout(() => {
+        const cfgScroll = $("screen-config");
+        if(cfgScroll) cfgScroll.scrollTop = parseInt(sv, 10) || 0;
+      }, 300);
+    }
     if(q.get("demo")){
       state.plan = generatePlan(collectCfg());
       state.plan.source = "offline";
       gotoPlan();
+      const ov = q.get("open");
+      if(ov !== null){
+        setTimeout(() => { openDetail(parseInt(ov, 10) || 0); }, 400);
+      }
     }
   } catch(e){}
 }
