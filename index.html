@@ -415,8 +415,15 @@ textarea::-webkit-scrollbar{width:0;display:none}
   background:transparent;color:#C7D4E8;display:grid;place-items:center;cursor:pointer;flex-shrink:0;
 }
 .dia-ctrl .nav svg{width:10px;height:10px}
-.dia-ctrl .nav.play{width:28px;height:28px;border-color:rgba(240,169,63,.6);color:#F0A93F}
-.dia-ctrl .nav.play.on{background:#F0A93F;color:#132A4C;border-color:#F0A93F}
+.play-fab{
+  position:absolute;left:10px;top:9px;width:30px;height:30px;border-radius:50%;
+  background:rgba(6,16,32,.6);border:1.5px solid rgba(240,169,63,.65);color:#F0A93F;
+  display:grid;place-items:center;cursor:pointer;padding:0;z-index:2;
+  transition:all .16s;
+}
+.play-fab.on{background:#F0A93F;color:#132A4C;border-color:#F0A93F}
+.play-fab svg{width:12px;height:12px}
+.play-fab:active{transform:scale(.92)}
 .legend i.cone{width:0;height:0;border:none;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #F0913A}
 .dia-ctrl .dots{flex:1;display:flex;justify-content:center;gap:7px}
 .dia-ctrl .dot{
@@ -986,6 +993,7 @@ function generatePlan(cfg){
     role: it.role,
     desc: it.desc,
     goal: it.goal,
+    cones: it.cones || [],
     min: mins[i],
     color: PALETTE[i % PALETTE.length]
   }));
@@ -2092,13 +2100,13 @@ function renderSheetBody(){
 
   html += '<div class="dia">';
   html += '<div class="dia-top">' + renderDiagram(kind, it, state.step) +
-    '<div class="stepno">第 ' + (state.step + 1) + ' / ' + steps.length + ' 步</div></div>';
+    '<div class="stepno">第 ' + (state.step + 1) + ' / ' + steps.length + ' 步</div>' +
+    '<button class="play-fab' + (state.playing ? " on" : "") + '" id="playStep">' + playIcon + '</button></div>';
   html += '<div class="dia-cap"><div class="cap"><div class="cn">' + (state.step + 1) + '</div><div>' + esc(s.cap) + '</div></div></div>';
   const playIcon = state.playing
     ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
   html += '<div class="dia-ctrl">' +
-      '<button class="nav play' + (state.playing ? " on" : "") + '" id="playStep">' + playIcon + '</button>' +
       '<button class="nav" id="prevStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12l7 7"/></svg></button>' +
       '<div class="dots">' + dots + '</div>' +
       '<button class="nav" id="nextStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>' +
