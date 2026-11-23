@@ -148,7 +148,56 @@ body{
 .lbl .req{font-size:10px;color:var(--orange);font-weight:500}
 
 /* 项目网格 */
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:11px}
+.grid4{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:11px}
+
+/* 横向滚轮（时长） */
+.wheel-wrap{position:relative;margin:10px -15px 0;overflow:hidden}
+.wheel{
+  display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
+  padding:4px calc(50% - 38px);scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.wheel::-webkit-scrollbar{display:none}
+.wheel-item{
+  flex:0 0 76px;scroll-snap-align:center;text-align:center;
+  padding:13px 0;border-radius:13px;border:1.5px solid var(--line);
+  background:#fff;font-size:17px;font-weight:680;color:#A8B3C4;
+  transition:all .18s;font-variant-numeric:tabular-nums;
+}
+.wheel-item.on{
+  border-color:var(--navy3);background:#EEF3FE;color:var(--navy);
+  transform:scale(1.08);box-shadow:0 6px 16px -8px rgba(40,69,111,.5);
+}
+.wheel-item .u{font-size:10px;font-weight:500;color:var(--ink3);margin-left:2px}
+.wheel-mask{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,var(--card) 0%,transparent 14%,transparent 86%,var(--card) 100%);
+}
+
+/* 性别 */
+.gender{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:11px}
+.gender .g{
+  border:1.5px solid var(--line);border-radius:13px;background:#fff;
+  padding:12px 0;text-align:center;cursor:pointer;transition:all .15s;
+}
+.gender .g .gi{font-size:16px;line-height:1;color:#9AA6B8}
+.gender .g .gl{font-size:12px;color:var(--ink2);margin-top:5px;font-weight:550}
+.gender .g.on{border-color:var(--navy3);background:#EEF3FE}
+.gender .g.on .gi,.gender .g.on .gl{color:var(--navy)}
+.gender .g:active{transform:scale(.96)}
+
+/* 自定义标签输入 */
+.tag.custom{color:#8A6417;background:#FBF4E6;border-color:#F0E3C8}
+.cust-row{display:flex;gap:7px;margin-top:9px}
+.cust-row input{
+  flex:1;border:1.5px solid var(--line);border-radius:9px;background:#fff;
+  padding:9px 11px;font-family:inherit;font-size:13px;color:var(--ink);
+}
+.cust-row input:focus{outline:none;border-color:var(--navy3)}
+.cust-row button{
+  border:none;background:var(--navy);color:#fff;border-radius:9px;
+  padding:0 15px;font-family:inherit;font-size:12.5px;font-weight:650;cursor:pointer;
+}
 .proj{
   border:1.5px solid var(--line);border-radius:var(--r2);background:#fff;
   padding:11px 2px 9px;text-align:center;cursor:pointer;
@@ -179,6 +228,8 @@ textarea::-webkit-scrollbar{width:0;display:none}
 }
 .tag:active{transform:scale(.95)}
 .tag.on{background:#E8EFFE;border-color:#B9CDF5;color:#22509E;font-weight:600}
+.tag-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);padding:8px 2px}
+.tag-loading .spin{width:14px;height:14px;border-width:2px}
 
 /* 数字输入 */
 .numrow{display:flex;align-items:center;gap:8px;margin-top:11px}
@@ -364,6 +415,9 @@ textarea::-webkit-scrollbar{width:0;display:none}
   background:transparent;color:#C7D4E8;display:grid;place-items:center;cursor:pointer;flex-shrink:0;
 }
 .dia-ctrl .nav svg{width:10px;height:10px}
+.dia-ctrl .nav.play{width:28px;height:28px;border-color:rgba(240,169,63,.6);color:#F0A93F}
+.dia-ctrl .nav.play.on{background:#F0A93F;color:#132A4C;border-color:#F0A93F}
+.legend i.cone{width:0;height:0;border:none;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #F0913A}
 .dia-ctrl .dots{flex:1;display:flex;justify-content:center;gap:7px}
 .dia-ctrl .dot{
   width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
@@ -515,18 +569,16 @@ textarea::-webkit-scrollbar{width:0;display:none}
       <div class="tags" id="painTags"></div>
     </div>
 
-    <!-- 年龄 -->
+    <!-- 学段 -->
     <div class="card">
-      <div class="lbl">学员年龄<span class="opt">（最小 ~ 最大）</span></div>
-      <div class="numrow">
-        <input class="num" id="ageMin" type="number" value="8" inputmode="numeric">
-        <span class="unit">岁 至</span>
-        <input class="num" id="ageMax" type="number" value="10" inputmode="numeric">
-        <span class="unit">岁</span>
-        <div class="spacer"></div>
-        <div class="stage" id="stageTag">小学</div>
-      </div>
-      <div class="tags" id="agePresets"></div>
+      <div class="lbl">学员学段</div>
+      <div class="tags" id="stageTags"></div>
+    </div>
+
+    <!-- 性别 -->
+    <div class="card">
+      <div class="lbl">学员性别</div>
+      <div class="gender" id="genderTags"></div>
     </div>
 
     <!-- 人数 -->
@@ -541,10 +593,13 @@ textarea::-webkit-scrollbar{width:0;display:none}
       <div class="tags" id="cntPresets"></div>
     </div>
 
-    <!-- 时长 -->
+    <!-- 时长（横向滚轮） -->
     <div class="card">
-      <div class="lbl">时长<span class="opt">（分钟）</span></div>
-      <div class="tags" id="durPresets"></div>
+      <div class="lbl">时长<span class="opt">（分钟 · 左右滑动）</span></div>
+      <div class="wheel-wrap">
+        <div class="wheel" id="durWheel"></div>
+        <div class="wheel-mask"></div>
+      </div>
     </div>
 
     <!-- 教案内容 -->
@@ -677,112 +732,100 @@ const FOCUS_FIT = {
 /* ---------- 8 个项目 ---------- */
 const SPORTS = [
 {
-  id:"soccer", name:"足球", emoji:"⚽", kind:"pitch",
-  tags:["停球不稳","传球不准","不敢对抗","射门无力","不会跑位","只会用惯用脚","带球总低头","体能跟不上"],
-  warm:{name:"抢圈热身", role:"热身", desc:"4 个桶围成方圈，中间 1 人抢断，外围连续一脚传球。", goal:"活动关节、提高触球次数，建立抬头观察与快速出球的习惯"},
-  skills:[
-    {name:"三角传接球", role:"技术", desc:"三人成三角站位，传接后立刻换位，要求停球朝向出球方向。", goal:"解决传球不准与停球朝向问题，形成一脚出球的节奏"},
-    {name:"标志桶绕行变向", role:"技术", desc:"带球绕 6 个桶，最后一段加速向空当推进。", goal:"提高带球时的抬头习惯与变向重心控制"},
-    {name:"禁区外射门打点", role:"技术", desc:"在禁区弧顶设置 4 个目标点，轮流射门命中。", goal:"解决射门无力，强化支撑脚位置与摆腿发力顺序"}
-  ],
-  agility:{name:"敏捷梯碎步与折返", role:"灵敏", desc:"敏捷梯完成后立刻 5 米折返，节奏不停顿。", goal:"提升脚步频率、起动速度与连续变向能力"},
-  game:{name:"3v3 小场对抗", role:"比赛", desc:"小场地 3 对 3，规定进球前必须完成一次横传。", goal:"把技术和跑位放进真实对抗，培养对抗勇气与传跑默契"},
-  cool:{name:"静态拉伸与复盘", role:"放松", desc:"下肢为主静态拉伸，教练带 3 个问题回顾课堂。", goal:"降低肌肉紧张、巩固当天学习要点"}
-},
-{
   id:"basketball", name:"篮球", emoji:"🏀", kind:"court",
-  tags:Object.keys(FOCUS_BB),
-  warm:{name:"动物园大冒险", role:"热身", desc:"听教练喊动物名，模仿动物跑过动物园。", goal:"活动关节、预防受伤；「听信号抬头」为后面的抬头运球做铺垫"},
-  skills:[
-    {name:"左手小火箭接力", role:"技术", desc:"只许用左手运球绕桶，往返接力，比哪组更快。", goal:"解决只会用强侧手的问题，用比赛让孩子愿意用左手、建立左手信心"},
-    {name:"抬头运球·信号通行", role:"技术", desc:"运球中看教练举起的颜色牌，喊出颜色后再变向。", goal:"强迫视线离开地面，形成抬头看人、看手势的习惯"},
-    {name:"护球摆脱 1v0", role:"技术", desc:"面对虚拟防守，做护球转身 + 换手摆脱再加速突破。", goal:"解决被防守逼近就慌，建立护球与换手的身体记忆"}
+  defaultTags:[
+    ["运球总低头看球","抬头运球"],["只会用强侧手","双手都能用"],["上篮步伐乱","上篮步伐"],
+    ["投篮姿势不对","投篮定型"],["不会传球只想自己打","传球分享"],["防守不会滑步","防守滑步"],
+    ["不会抢篮板","篮板卡位"],["比赛中不敢出手","敢出手"]
   ],
-  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
-  power:{name:"标志盘跳格与落地控制", role:"力量", desc:"连续跳格练习，重点落在落地缓冲。", goal:"发展下肢爆发力、落地控制和身体协调"},
-  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 传球接力，先完成全队的获胜。", goal:"把器材变成规则，在竞争中练习沟通、跑位与决策"},
-  game2:{name:"1v1 攻防挑战赛", role:"比赛", desc:"半场 1 对 1，进攻限 8 秒，防守不许犯规。", goal:"在真实压力下检验运球、护球与终结能力"},
-  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点"}
+  warm:{name:"动物园大冒险", role:"热身", desc:"听教练喊动物名，模仿动物跑过动物园。", goal:"活动关节、预防受伤；「听信号抬头」为后面的抬头运球做铺垫",
+        cones:[[90,70],[70,110],[70,170],[90,210]]},
+  skills:[
+    {name:"左手小火箭接力", role:"技术", desc:"只许用左手运球绕桶，往返接力，比哪组更快。", goal:"解决只会用强侧手的问题，用比赛让孩子愿意用左手、建立左手信心",
+     cones:[[120,90],[120,170],[160,130]]},
+    {name:"抬头运球·信号通行", role:"技术", desc:"运球中看教练举起的颜色牌，喊出颜色后再变向。", goal:"强迫视线离开地面，形成抬头看人、看手势的习惯",
+     cones:[[250,80],[250,180]]},
+    {name:"护球摆脱 1v0", role:"技术", desc:"面对虚拟防守，做护球转身 + 换手摆脱再加速突破。", goal:"解决被防守逼近就慌，建立护球与换手的身体记忆",
+     cones:[[300,110],[300,150]]}
+  ],
+  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制",
+           cones:[[200,90],[240,130],[200,170]]},
+  power:{name:"标志盘跳格与落地控制", role:"力量", desc:"连续跳格练习，重点落在落地缓冲。", goal:"发展下肢爆发力、落地控制和身体协调",
+         cones:[[110,90],[150,130],[110,170],[150,210]]},
+  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 传球接力，先完成全队的获胜。", goal:"把器材变成规则，在竞争中练习沟通、跑位与决策",
+        cones:[[110,80],[110,180],[290,80],[290,180]]},
+  game2:{name:"1v1 攻防挑战赛", role:"比赛", desc:"半场 1 对 1，进攻限 8 秒，防守不许犯规。", goal:"在真实压力下检验运球、护球与终结能力",
+         cones:[[200,60]]},
+  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点", cones:[]}
 },
 {
-  id:"tennis", name:"网球", emoji:"🎾", kind:"grid",
-  tags:["正手动作变形","反手不敢打","发球不稳","脚步跟不上","击球点太晚","体能下降快"],
-  warm:{name:"小步频热身 + 挥拍激活", role:"热身", desc:"原地小步频、侧滑步交替，配合空挥正反手各 20 次。", goal:"升高体温、激活肩袖与髋部，为大幅度挥拍做准备"},
-  skills:[
-    {name:"正手定点对拉", role:"技术", desc:"固定落点连续对拉，要求击球点在身体侧前方。", goal:"解决击球点太晚，把击球点前移并稳定挥拍轨迹"},
-    {name:"反手双手扶稳", role:"技术", desc:"教练送球到反手位，用双手反拍连续回击 10 板不失误。", goal:"解决反手不敢打，建立双手反拍的稳定结构"},
-    {name:"发球抛球节奏", role:"技术", desc:"只练抛球与击球时机，抛球落点控制在身前一只拍面内。", goal:"解决发球不稳，把注意力放在抛球一致性上"}
+  id:"gym", name:"健身", emoji:"💪", kind:"grid",
+  defaultTags:[
+    ["深蹲膝盖内扣","深蹲轨迹"],["腰背代偿","髋铰链"],["只练推不练拉","推拉平衡"],
+    ["核心塌腰","核心稳定"],["肩关节弹响","肩袖健康"],["动作幅度不足","全程幅度"],
+    ["左右力量不均","单侧训练"],["练完不拉伸","恢复习惯"]
   ],
-  agility:{name:"米字步移动", role:"灵敏", desc:"以中心点为原点，向 8 个方向启动回位。", goal:"提升启动速度与回位意识，减少被调动后的空档"},
-  game:{name:"半场抢七对抗", role:"比赛", desc:"半场抢七，每分只能发一次，强调第一板进攻。", goal:"在比分压力下练习发球与前三板决策"},
-  cool:{name:"肩袖拉伸与放松", role:"放松", desc:"肩袖、前臂、髋屈肌静态拉伸各 30 秒。", goal:"预防肩肘劳损，加快恢复"}
-},
-{
-  id:"badminton", name:"羽毛球", emoji:"🏸", kind:"grid",
-  tags:["步伐混乱","高远球不到位","网前球不稳","杀球无力","反手弱","体能跟不上"],
-  warm:{name:"全场步法热身", role:"热身", desc:"沿场地四角做并步、交叉步、垫步组合，配合手腕绕环。", goal:"激活踝膝髋，建立场地空间感与步法节奏"},
+  warm:{name:"动态热身与动作模式激活", role:"热身", desc:"髋、肩、踝依次动态活动，配空杆深蹲和髋铰链找发力感。", goal:"升高体温、激活关节，为负重训练建立正确的动作模式",
+        cones:[[100,90],[100,170]]},
   skills:[
-    {name:"高远球发力链条", role:"技术", desc:"固定位置连续高远球，强调蹬地转体带动上肢。", goal:"解决高远球不到位，把发力顺序从手臂改为全身链条"},
-    {name:"网前搓球控网", role:"技术", desc:"上网搓球，要求球过网即下坠、贴网落地。", goal:"提高网前手感与手上控制，减少挑高被进攻"},
-    {name:"反手挑球稳定", role:"技术", desc:"反手位连续挑直线与斜线，落点到底线两角。", goal:"解决反手弱，建立反手挑球的固定动作"}
+    {name:"深蹲动作模式", role:"技术", desc:"徒手深蹲 → 空杆深蹲，强调脚掌三点压地、膝盖对脚尖。", goal:"解决深蹲时膝盖内扣、脚跟离地的问题",
+     cones:[[130,90],[130,170]]},
+    {name:"髋铰链与硬拉", role:"技术", desc:"从髋铰链开始，再练杠铃贴腿上行、顶点收臀。", goal:"建立以髋发力代替弯腰拉起的模式，保护腰椎",
+     cones:[[250,100],[250,160]]},
+    {name:"上肢推拉平衡", role:"技术", desc:"推（卧推/俯卧撑）与拉（划船/引体）交替进行，比例 1:1。", goal:"解决只练推不练拉导致的圆肩与肩关节失衡",
+     cones:[[320,90],[320,170]]},
+    {name:"核心抗伸展", role:"技术", desc:"平板支撑、死虫、抗旋转推，全程不塌腰。", goal:"建立躯干稳定，让大重量动作不塌腰",
+     cones:[[200,130]]}
   ],
-  agility:{name:"米字步 + 启动", role:"灵敏", desc:"中心点出发，六点触线后回位，每组 20 秒。", goal:"提升启动第一步与回中心的速度"},
-  game:{name:"21 分制单打对抗", role:"比赛", desc:"21 分制，规定每局至少 5 次网前球。", goal:"把步法与网前技术放进实战节奏"},
-  cool:{name:"肩肘腕拉伸", role:"放松", desc:"肩、肘、腕、腰背依次拉伸，配合深呼吸。", goal:"缓解上肢疲劳，预防网球肘类劳损"}
-},
-{
-  id:"pingpong", name:"乒乓球", emoji:"🏓", kind:"grid",
-  tags:["正手不稳","反手推挡弱","发球单一","脚步慢","接发球判断差","连续性差"],
-  warm:{name:"徒手挥拍 + 小跳", role:"热身", desc:"正反手徒手挥拍各 30 次，配合原地小跳与转腰。", goal:"激活腰髋与肩部，建立挥拍节奏"},
-  skills:[
-    {name:"正手攻球定型", role:"技术", desc:"多球定点正手攻，连续 30 板不失误。", goal:"解决正手不稳，固定引拍幅度与击球点"},
-    {name:"反手推挡对抗", role:"技术", desc:"反手推挡连续对拉，逐步加速。", goal:"解决反手推挡弱，提高借力与还原速度"},
-    {name:"发球变化组合", role:"技术", desc:"同一动作发出下旋、不转、侧旋三种球。", goal:"解决发球单一，让对手难以判断旋转"}
-  ],
-  agility:{name:"侧滑步 + 还原", role:"灵敏", desc:"左右侧滑步摸台角，每次回中心位。", goal:"提高步法覆盖范围与击球后的快速还原"},
-  game:{name:"11 分制对抗", role:"比赛", desc:"11 分制，每局必须使用两种不同发球。", goal:"检验发球变化与相持中的连续性"},
-  cool:{name:"肩颈放松", role:"放松", desc:"肩颈、前臂、腰背拉伸，眼球远眺放松。", goal:"缓解长时间低头与单侧发力带来的紧张"}
-},
-{
-  id:"volleyball", name:"排球", emoji:"🏐", kind:"grid",
-  tags:["垫球不稳","发球失误多","不敢扣球","站位混乱","传球不到位","弹跳不足"],
-  warm:{name:"动态拉伸 + 传球手感", role:"热身", desc:"肩腕踝动态拉伸后，两人一组对传 3 分钟。", goal:"激活肩关节与手指手腕，找回球感"},
-  skills:[
-    {name:"垫球稳定性", role:"技术", desc:"对墙连续垫球，要求落点集中在一平方米内。", goal:"解决垫球不稳，固定手臂平面与蹬送节奏"},
-    {name:"上手传球到位", role:"技术", desc:"从后排向 3 号位传球，落点控制在网前一米。", goal:"解决传球不到位，建立手型与发力方向"},
-    {name:"发球过网稳定性", role:"技术", desc:"连续发球 10 个，要求 8 个以上过网进区。", goal:"解决发球失误多，用目标区降低冒险"}
-  ],
-  agility:{name:"前后移动与起动", role:"灵敏", desc:"3 米线到端线折返，配合起动信号。", goal:"提升起动与移动速度，改善站位到位率"},
-  game:{name:"6v6 轮转对抗", role:"比赛", desc:"轮转制对抗，每球必须三次触球过网。", goal:"在轮转中理解站位与协作，敢于参与进攻"},
-  cool:{name:"肩背放松", role:"放松", desc:"肩袖、背部、大腿后侧拉伸。", goal:"缓解扣球与垫球的重复负荷"}
-},
-{
-  id:"swim", name:"游泳", emoji:"🏊", kind:"grid",
-  tags:["换气不顺","打腿无力","身体下沉","划水效率低","耐力不足","动作不协调"],
-  warm:{name:"陆上热身 + 水中适应", role:"热身", desc:"陆上 5 分钟关节活动，入水后 100 米轻松游适应。", goal:"升高体温、适应水温，预防抽筋"},
-  skills:[
-    {name:"换气节奏", role:"技术", desc:"扶板打腿，每 3 次划手换一次气，强调水下均匀呼气。", goal:"解决换气不顺，建立水下呼气、水上吸气的节奏"},
-    {name:"打腿效率", role:"技术", desc:"扶板 25 米打腿，要求频率稳定、脚背绷直。", goal:"解决打腿无力，提高推进效率与身体位置"},
-    {name:"划手入水与抱水", role:"技术", desc:"分解练习入水点与高肘抱水，配合划水路线。", goal:"解决划水效率低，增加每次划手的推进距离"}
-  ],
-  agility:{name:"出发与转身", role:"灵敏", desc:"蹬边出发 + 25 米转身练习各 6 组。", goal:"提升出发爆发与转身后的水下推进"},
-  game:{name:"25 米计时挑战", role:"比赛", desc:"25 米计时，记录每人成绩并挑战个人最好。", goal:"用计时把技术练习转化为可量化的进步感"},
-  cool:{name:"水中放松与拉伸", role:"放松", desc:"水中慢游放松，陆上拉伸肩背与小腿。", goal:"降低肌肉紧张，加快恢复"}
+  agility:{name:"单侧稳定性训练", role:"灵敏", desc:"单腿硬拉、保加利亚分腿蹲交替。", goal:"纠正左右力量不均，提升髋稳定",
+           cones:[[180,100],[180,160]]},
+  power:{name:"爆发力循环", role:"力量", desc:"壶铃摆动 + 跳箱 + 药球砸地，循环 3 轮。", goal:"提升功率输出与神经募集能力",
+         cones:[[140,120],[140,180]]},
+  game:{name:"循环训练挑战", role:"比赛", desc:"4 个动作串联循环，计时完成尽可能多的轮数。", goal:"在疲劳状态下保持动作质量，检验当天训练成果",
+        cones:[[110,90],[110,170],[290,90],[290,170]]},
+  cool:{name:"静态拉伸与呼吸", role:"放松", desc:"主要肌群静态拉伸，配合腹式呼吸降心率。", goal:"降低心率、缓解延迟性酸痛，帮助恢复", cones:[]}
 },
 {
   id:"fitness", name:"体能", emoji:"🏃", kind:"grid",
-  tags:Object.keys(FOCUS_FIT),
-  warm:{name:"动物模仿动态热身", role:"热身", desc:"用模仿动物移动完成全身动态热身。", goal:"激活全身关节和肌肉，提高课堂兴趣，建立听口令停走的安全习惯"},
-  skills:[
-    {name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
-    {name:"垫上平衡与核心控制", role:"技术", desc:"在体操垫上完成单脚站立、爬行和滚转组合。", goal:"提升静态平衡、核心稳定、身体控制和胆小孩子的自信心"},
-    {name:"标志盘跳格与落地控制", role:"技术", desc:"通过连续跳格练习发展弹跳和落地稳定。", goal:"发展下肢爆发力、落地控制和身体协调"},
-    {name:"信号变向追逐", role:"技术", desc:"听颜色和方向信号做快速变向跑。", goal:"提升反应速度、变向协调、听觉注意力和空间躲避能力"}
+  defaultTags:[
+    ["身体协调性差","协调性"],["跑步速度慢","速度"],["耐力差容易累","耐力"],
+    ["反应慢","反应速度"],["核心力量弱","核心力量"],["柔韧性差","柔韧"],
+    ["弹跳力差","弹跳"],["久坐体态不好","体态"]
   ],
-  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制"},
-  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 器材接力，全队完成最快者胜。", goal:"把器材变成规则，在竞争中练习沟通与执行力"},
-  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点"}
+  warm:{name:"动物模仿动态热身", role:"热身", desc:"用模仿动物移动完成全身动态热身。", goal:"激活全身关节和肌肉，提高课堂兴趣，建立听口令停走的安全习惯",
+        cones:[[90,70],[70,110],[70,170],[90,210]]},
+  skills:[
+    {name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制",
+     cones:[[200,90],[240,130],[200,170]]},
+    {name:"垫上平衡与核心控制", role:"技术", desc:"在体操垫上完成单脚站立、爬行和滚转组合。", goal:"提升静态平衡、核心稳定、身体控制和胆小孩子的自信心",
+     cones:[[140,90],[140,170]]},
+    {name:"标志盘跳格与落地控制", role:"技术", desc:"通过连续跳格练习发展弹跳和落地稳定。", goal:"发展下肢爆发力、落地控制和身体协调",
+     cones:[[110,90],[150,130],[110,170],[150,210]]},
+    {name:"信号变向追逐", role:"技术", desc:"听颜色和方向信号做快速变向跑。", goal:"提升反应速度、变向协调、听觉注意力和空间躲避能力",
+     cones:[[250,80],[250,180]]}
+  ],
+  agility:{name:"敏捷梯碎步通行", role:"灵敏", desc:"用多种脚步节奏快速通过敏捷梯。", goal:"提升脚步频率、身体节奏、下肢协调和注意力控制",
+           cones:[[200,90],[240,130],[200,170]]},
+  game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 器材接力，全队完成最快者胜。", goal:"把器材变成规则，在竞争中练习沟通与执行力",
+        cones:[[110,80],[110,180],[290,80],[290,180]]},
+  cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点", cones:[]}
 }
+];
+
+/* ---------- 学段 / 性别 / 时长 ---------- */
+const STAGES = [
+  {id:"p1", label:"小学低年级", ageMin:7,  ageMax:9},
+  {id:"p2", label:"小学高年级", ageMin:10, ageMax:12},
+  {id:"m1", label:"初中",      ageMin:13, ageMax:15},
+  {id:"h1", label:"高中",      ageMin:16, ageMax:18},
+  {id:"c1", label:"大专",      ageMin:18, ageMax:20},
+  {id:"c2", label:"本科",      ageMin:21, ageMax:22},
+  {id:"ad", label:"成人",      ageMin:23, ageMax:60}
+];
+const GENDERS = [
+  {id:"m", label:"男",  icon:"♂"},
+  {id:"f", label:"女",  icon:"♀"},
+  {id:"x", label:"混合", icon:"⚥"}
 ];
 
 /* ==================================================================
@@ -806,9 +849,9 @@ function campName(sport, age){
   const st = stageOf(age);
   return st === "成人" ? sport.name + "成人实战训练营" : sport.name + st + "训练营";
 }
+const TAG_FOCUS = {};   /* 标签 → 正向训练主题，由 AI 生成时填充 */
 function focusList(sport, tags){
-  const map = sport.id === "basketball" ? FOCUS_BB : (sport.id === "fitness" ? FOCUS_FIT : null);
-  return tags.map(t => (map && map[t]) ? map[t] : t);
+  return tags.map(t => TAG_FOCUS[t] || t);
 }
 function pickItems(sport, dur, tags){
   const items = [];
@@ -859,7 +902,7 @@ function allocTime(items, dur){
   return mins;
 }
 function buildAnalysis(sport, cfg){
-  const st = stageOf(cfg.ageMax);
+  const st = cfg.stageLabel || stageOf(cfg.ageMax);
   const fixed = cfg.cntMin === cfg.cntMax;
   const who = st === "成人"
     ? (cfg.cntMin + "~" + cfg.cntMax + "名成人学员")
@@ -911,6 +954,7 @@ function buildEquip(sport, cfg){
     pingpong: "球拍（自备）、乒乓球 20 个、多球盆 1 个、毛巾 1 条",
     volleyball: "排球 " + Math.max(1, Math.min(cfg.cntMax, 10)) + " 个、标志桶 6 个、网与网柱、哨子 1 个",
     swim: "泳镜、泳帽、浮板若干、计时器 1 个、水杯",
+    gym: "哑铃/杠铃若干（按学员水平配重）、训练凳 2 张、瑜伽垫每人 1 张、弹力带 4 条、计时器 1 个、镁粉或防滑手套、水杯",
     fitness: "标志桶 10 个、敏捷梯 2 条、体操垫 6 张、标志盘 20 个、哨子 1 个、计时器 1 个"
   }[sport.id] || "标志桶 10 个、标志盘 20 个、哨子 1 个、计时器 1 个";
   const extra = picked.filter(p => base.indexOf(p) < 0);
@@ -1089,45 +1133,85 @@ const ARROW_STYLE = {
 /* 优先用 AI 画的步骤；没有就用本地布局引擎兜底 */
 function stepsOf(item){
   if(item && Array.isArray(item.steps) && item.steps.length) return item.steps;
-  return buildSteps(item, 3);
+  const seq = buildSteps(item, 3);
+  const cones = (item && item.cones ? item.cones : []).map(c => ({ x: c[0], y: c[1] }));
+  seq.forEach(st => { if(!st.cones) st.cones = cones; });
+  return seq;
+}
+
+/* 标志桶：橙色三角 + 底座阴影，和球员圆形明确区分 */
+function coneMarkup(c){
+  return '<g transform="translate(' + c.x + ',' + c.y + ')">' +
+    '<ellipse cx="0" cy="7" rx="9" ry="3" fill="#000" opacity=".18"/>' +
+    '<path d="M0,-10 L8,6 L-8,6 Z" fill="#F0913A" stroke="#FFFFFF" stroke-width="1.6" stroke-linejoin="round"/>' +
+    '<path d="M-4.2,-1.2 L4.2,-1.2" stroke="#FFFFFF" stroke-width="2.4" opacity=".85"/>' +
+    '</g>';
 }
 
 function renderDiagram(kind, item, step){
   const steps = stepsOf(item);
-  const s = steps[Math.min(step, steps.length - 1)];
+  const idx = Math.min(step, steps.length - 1);
+  const s = steps[idx];
+  const prev = idx > 0 ? steps[idx - 1] : null;
+  const prevMap = {};
+  if(prev) (prev.players || []).forEach(p => { prevMap[p.n] = p; });
+
   let g = "";
+
+  /* 区域 */
   (s.rects || []).forEach(r => {
     g += '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h +
-      '" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="5 5" rx="4"/>' +
+      '" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="1.4" stroke-dasharray="5 5" rx="4"/>' +
       '<text x="' + (r.x + 5) + '" y="' + (r.y - 5) + '" fill="#E4ECF8" font-size="9.5" font-family="sans-serif">' + esc(r.label || "") + '</text>';
   });
+
+  /* 标志桶 */
+  (s.cones || []).forEach(c => { g += coneMarkup(c); });
+
+  /* 箭头：带一次「画出来」的动画 */
   (s.arrows || []).forEach(a => {
     let ar = a;
     if(Array.isArray(ar)) ar = { x1:ar[0], y1:ar[1], x2:ar[2], y2:ar[3], t:"run" };
     const st = ARROW_STYLE[ar.t] || ARROW_STYLE.run;
-    const dash = st.dash ? ' stroke-dasharray="' + st.dash + '"' : "";
+    const dash = st.dash ? ' stroke-dasharray="' + st.dash + '"' : ' stroke-dasharray="60"';
+    const anim = st.dash
+      ? '<animate attributeName="stroke-dashoffset" from="22" to="0" dur="0.7s" fill="freeze"/>'
+      : '<animate attributeName="stroke-dashoffset" from="60" to="0" dur="0.6s" fill="freeze"/>';
     g += '<line x1="' + ar.x1 + '" y1="' + ar.y1 + '" x2="' + ar.x2 + '" y2="' + ar.y2 +
       '" stroke="' + st.stroke + '" stroke-opacity=".95" stroke-width="2"' + dash +
-      ' marker-end="url(#' + st.marker + ')"/>';
+      ' marker-end="url(#' + st.marker + ')">' + anim + '</line>';
   });
+
+  /* 球员：位置变化用 SMIL 动画过渡 */
   (s.players || []).forEach(p => {
     const fill = p.t === "b" ? "#2F6FE4" : "#D8382F";
-    g += '<g><circle cx="' + p.x + '" cy="' + p.y + '" r="11" fill="' + fill +
-      '" stroke="#fff" stroke-width="2"/>' +
-      '<text x="' + p.x + '" y="' + (p.y + 4) + '" text-anchor="middle" fill="#fff" font-size="10.5" font-weight="700" font-family="sans-serif">' + p.n + '</text></g>';
+    const from = prevMap[p.n];
+    let anim = "";
+    if(from && (Math.abs(from.x - p.x) > 1 || Math.abs(from.y - p.y) > 1)){
+      anim = '<animateTransform attributeName="transform" type="translate" ' +
+        'from="' + from.x + ',' + from.y + '" to="' + p.x + ',' + p.y + '" ' +
+        'dur="0.75s" calcMode="spline" keySplines="0.3 0 0.2 1" fill="freeze"/>';
+    }
+    g += '<g transform="translate(' + p.x + ',' + p.y + ')">' + anim +
+      '<circle r="11" fill="' + fill + '" stroke="#fff" stroke-width="2"/>' +
+      '<text y="4" text-anchor="middle" fill="#fff" font-size="10.5" font-weight="700" font-family="sans-serif">' + p.n + '</text></g>';
   });
+
+  /* 教练 */
   if(s.coach){
-    g += '<g><circle cx="' + s.coach.x + '" cy="' + s.coach.y + '" r="11" fill="#111" stroke="#fff" stroke-width="2"/>' +
-      '<text x="' + s.coach.x + '" y="' + (s.coach.y + 4) + '" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="sans-serif">C</text></g>';
+    g += '<g transform="translate(' + s.coach.x + ',' + s.coach.y + ')">' +
+      '<circle r="11" fill="#111" stroke="#fff" stroke-width="2"/>' +
+      '<text y="4" text-anchor="middle" fill="#fff" font-size="10" font-weight="700" font-family="sans-serif">C</text></g>';
   }
+
   const marker = (id, color) =>
     '<marker id="' + id + '" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">' +
     '<path d="M0,0 L6,3 L0,6 Z" fill="' + color + '"/></marker>';
-  return '<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">' +
+  return '<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" class="diagram-svg">' +
     '<defs>' + marker("ah-w", "#FFFFFF") + marker("ah-o", "#F0A93F") +
     marker("ah-g", "#E8C77A") + marker("ah-r", "#E9664A") + '</defs>' +
     courtMarkup(kind) + g +
-    '<text x="392" y="252" text-anchor="end" fill="#FFFFFF" fill-opacity=".45" font-size="8" font-family="sans-serif">COACHPRO</text>' +
+    '<text x="392" y="252" text-anchor="end" fill="#FFFFFF" fill-opacity=".4" font-size="8" font-family="sans-serif">COACHPRO</text>' +
     '</svg>';
 }
 
@@ -1136,8 +1220,11 @@ function renderDiagram(kind, item, step){
    ================================================================== */
 const state = {
   sport: "basketball",
+  stage: "p2",
+  gender: "x",
   tags: [],
-  ageMin: 8, ageMax: 10,
+  tagList: [],
+  tagLoading: false,
   cntMin: 6, cntMax: 6,
   duration: 90,
   detail: "full",
@@ -1146,6 +1233,7 @@ const state = {
   plan: null,
   mine: [],
   step: 0,
+  playing: false,
   curItem: null
 };
 
@@ -1166,51 +1254,144 @@ function toast(msg){
 
 function renderProjects(){
   const box = $("projects");
-  box.innerHTML = SPORTS.map(s =>
-    '<div class="proj' + (state.sport === s.id ? " on" : "") + '" data-id="' + s.id + '">' +
-    '<div class="e">' + s.emoji + '</div><div class="t">' + s.name + '</div></div>'
+  box.innerHTML = SPORTS.map(sp =>
+    '<div class="proj' + (state.sport === sp.id ? " on" : "") + '" data-id="' + sp.id + '">' +
+    '<div class="e">' + sp.emoji + '</div><div class="t">' + sp.name + '</div></div>'
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".proj"), el => {
     el.onclick = () => {
+      if(state.sport === el.dataset.id) return;
       state.sport = el.dataset.id;
       state.tags = [];
       renderProjects();
-      renderPainTags();
+      loadTags();
     };
   });
 }
-function curSport(){ return SPORTS.find(s => s.id === state.sport) || SPORTS[1]; }
+function curSport(){ return SPORTS.find(sp => sp.id === state.sport) || SPORTS[0]; }
+function genderLabel(){
+  const g = GENDERS.find(x => x.id === state.gender);
+  return g ? g.label : "混合";
+}
 
+/* ================= 痛点标签：按学段由 AI 生成 ================= */
+const TAG_CACHE = {};
+function localTagList(){
+  return (curSport().defaultTags || []).map(p => ({ t:p[0], f:p[1] }));
+}
+function applyTagList(list){
+  state.tagList = list;
+  list.forEach(x => { TAG_FOCUS[x.t] = x.f; });
+  state.tags = state.tags.filter(t => list.some(x => x.t === t));
+}
 function renderPainTags(){
   const box = $("painTags");
-  box.innerHTML = curSport().tags.map(t =>
-    '<div class="tag' + (state.tags.indexOf(t) >= 0 ? " on" : "") + '" data-t="' + esc(t) + '">' + esc(t) + '</div>'
+  if(state.tagLoading){
+    box.innerHTML = '<div class="tag-loading"><span class="spin"></span>正在按学段生成标签…</div>';
+    return;
+  }
+  const list = state.tagList.length ? state.tagList : localTagList();
+  box.innerHTML = list.map(x =>
+    '<div class="tag' + (state.tags.indexOf(x.t) >= 0 ? " on" : "") + '" data-t="' + esc(x.t) + '">' + esc(x.t) + '</div>'
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
     el.onclick = () => {
       const t = el.dataset.t;
       const i = state.tags.indexOf(t);
-      if(i >= 0) state.tags.splice(i,1); else state.tags.push(t);
+      if(i >= 0) state.tags.splice(i, 1); else state.tags.push(t);
       renderPainTags();
     };
   });
 }
-function renderAgePresets(){
-  const box = $("agePresets");
-  box.innerHTML = AGES.map(a =>
-    '<div class="tag' + (state.ageMin === a.a[0] && state.ageMax === a.a[1] ? " on" : "") +
-    '" data-a="' + a.a.join(",") + '">' + a.l + '</div>'
+let tagSeq = 0;
+async function loadTags(){
+  const seq = ++tagSeq;
+  const key = state.sport + "_" + state.stage;
+  if(TAG_CACHE[key]){
+    state.tagLoading = false;
+    applyTagList(TAG_CACHE[key]);
+    renderPainTags();
+    return;
+  }
+  if(!AI.ready()){
+    state.tagLoading = false;
+    applyTagList(localTagList());
+    renderPainTags();
+    return;
+  }
+  state.tagLoading = true;
+  renderPainTags();
+  try {
+    const list = await aiGenerateTags();
+    if(seq !== tagSeq) return;          /* 用户又切了，丢弃这次结果 */
+    TAG_CACHE[key] = list;
+    state.tagLoading = false;
+    applyTagList(list);
+  } catch(e){
+    if(seq !== tagSeq) return;
+    state.tagLoading = false;
+    applyTagList(localTagList());
+  }
+  renderPainTags();
+}
+async function aiGenerateTags(){
+  const sp = curSport();
+  const st = STAGES.find(x => x.id === state.stage) || STAGES[0];
+  const sys = "你是中国体育培训行业的资深教练，熟悉各年龄段的生理与心理特点。只输出 JSON。";
+  const user = [
+    "运动项目：" + sp.name,
+    "学员学段：" + st.label + "（" + st.ageMin + "-" + st.ageMax + " 岁）",
+    "",
+    "列出这个年龄段学员在" + sp.name + "训练中最常见的 8 个问题。要求：",
+    "1. 每条 4-9 个字，像教练在场边说的话；不要「提升综合素质」这类空话。",
+    "2. 必须贴合这个年龄段的生理和心理特点：低龄偏协调与注意力，青少年偏动作定型与对抗，成人偏体态与劳损。",
+    "3. 每条配一个正向训练主题，2-6 个字。",
+    '只输出：{"tags":[{"t":"问题原文","f":"正向主题"}]}'
+  ].join("\n");
+  const text = await chatRaw([
+    { role:"system", content: sys },
+    { role:"user", content: user }
+  ], 600);
+  const j = parseLLMJson(text);
+  const list = (j.tags || []).map(x => ({
+    t: String(x.t || "").slice(0, 12).trim(),
+    f: String(x.f || "").slice(0, 8).trim() || String(x.t || "").slice(0, 6)
+  })).filter(x => x.t);
+  if(!list.length) throw new Error("标签为空");
+  return list.slice(0, 8);
+}
+
+/* ================= 学段 ================= */
+function renderStages(){
+  const box = $("stageTags");
+  box.innerHTML = STAGES.map(st =>
+    '<div class="tag' + (state.stage === st.id ? " on" : "") + '" data-s="' + st.id + '">' +
+      st.label + ' <span style="opacity:.5;font-size:10px">' + st.ageMin + "-" + st.ageMax + '</span></div>'
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
     el.onclick = () => {
-      const p = el.dataset.a.split(",").map(Number);
-      state.ageMin = p[0]; state.ageMax = p[1];
-      $("ageMin").value = p[0]; $("ageMax").value = p[1];
-      $("stageTag").textContent = stageOf(p[1]);
-      renderAgePresets();
+      if(state.stage === el.dataset.s) return;
+      state.stage = el.dataset.s;
+      state.tags = [];
+      renderStages();
+      loadTags();
     };
   });
 }
+
+/* ================= 性别 ================= */
+function renderGender(){
+  const box = $("genderTags");
+  box.innerHTML = GENDERS.map(g =>
+    '<div class="g' + (state.gender === g.id ? " on" : "") + '" data-g="' + g.id + '">' +
+      '<div class="gi">' + g.icon + '</div><div class="gl">' + g.label + '</div></div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".g"), el => {
+    el.onclick = () => { state.gender = el.dataset.g; renderGender(); };
+  });
+}
+
+/* ================= 人数 ================= */
 function renderCntPresets(){
   const box = $("cntPresets");
   box.innerHTML = COUNTS.map(c => {
@@ -1227,37 +1408,103 @@ function renderCntPresets(){
     };
   });
 }
+
+/* ================= 时长：横向滚轮 ================= */
 function renderDur(){
-  const box = $("durPresets");
+  const box = $("durWheel");
   box.innerHTML = DURS.map(d =>
-    '<div class="tag' + (state.duration === d ? " on" : "") + '" data-d="' + d + '">' + d + '</div>'
+    '<div class="wheel-item' + (state.duration === d ? " on" : "") + '" data-d="' + d + '">' +
+      d + '<span class="u">分</span></div>'
   ).join("");
-  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
-    el.onclick = () => { state.duration = Number(el.dataset.d); renderDur(); };
-  });
+
+  const sync = () => {
+    const mid = box.scrollLeft + box.clientWidth / 2;
+    let best = null, bd = 1e9;
+    Array.prototype.forEach.call(box.children, el => {
+      const c = el.offsetLeft + el.offsetWidth / 2;
+      const d = Math.abs(c - mid);
+      if(d < bd){ bd = d; best = el; }
+    });
+    if(best){
+      const v = Number(best.dataset.d);
+      if(v !== state.duration){
+        state.duration = v;
+        Array.prototype.forEach.call(box.children, el => el.classList.toggle("on", el === best));
+      }
+    }
+  };
+  box.onscroll = () => { clearTimeout(box._t); box._t = setTimeout(sync, 70); };
+  const center = () => {
+    const idx = DURS.indexOf(state.duration);
+    const el = box.children[idx];
+    if(el) box.scrollLeft = el.offsetLeft + el.offsetWidth / 2 - box.clientWidth / 2;
+    sync();
+  };
+  if(typeof requestAnimationFrame === "function") requestAnimationFrame(center);
+  else center();
 }
+
+/* ================= 自定义输入 ================= */
+function inlineInput(container, placeholder, cb){
+  const old = container.querySelector(".cust-row");
+  if(old) old.remove();
+  const row = document.createElement("div");
+  row.className = "cust-row";
+  row.style.width = "100%";
+  row.innerHTML = '<input type="text" maxlength="12" placeholder="' + placeholder + '"><button>确定</button>';
+  container.appendChild(row);
+  const inp = row.querySelector("input");
+  inp.focus();
+  const commit = () => {
+    const v = inp.value.trim();
+    row.remove();
+    if(v) cb(v);
+  };
+  row.querySelector("button").onclick = commit;
+  inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); commit(); } };
+  inp.onblur = () => setTimeout(() => { if(row.parentNode) row.remove(); }, 150);
+}
+
+/* ================= 场地条件 ================= */
 function renderVenue(){
   const box = $("venueTags");
-  box.innerHTML = VENUES.map(v =>
-    '<div class="tag' + (state.venue === v ? " on" : "") + '" data-v="' + v + '">' + v + '</div>'
-  ).join("");
+  const opts = VENUES.slice();
+  if(state.venue && opts.indexOf(state.venue) < 0) opts.push(state.venue);
+  box.innerHTML = opts.map(v =>
+    '<div class="tag' + (state.venue === v ? " on" : "") + '" data-v="' + esc(v) + '">' + esc(v) + '</div>'
+  ).join("") + '<div class="tag custom" id="venueCustom">＋ 自定义</div>';
   Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    if(el.id === "venueCustom"){
+      el.onclick = () => inlineInput(box, "例如：半场木地板", v => { state.venue = v; renderVenue(); });
+      return;
+    }
     el.onclick = () => {
       state.venue = state.venue === el.dataset.v ? "" : el.dataset.v;
       renderVenue();
     };
   });
 }
+
+/* ================= 可用教具 ================= */
 function renderEquips(){
   const box = $("equipTags");
-  box.innerHTML = EQUIPS.map(e =>
-    '<div class="tag' + (state.equips.indexOf(e) >= 0 ? " on" : "") + '" data-e="' + e + '">' + e + '</div>'
-  ).join("");
+  const opts = EQUIPS.slice();
+  state.equips.forEach(e => { if(opts.indexOf(e) < 0) opts.push(e); });
+  box.innerHTML = opts.map(e =>
+    '<div class="tag' + (state.equips.indexOf(e) >= 0 ? " on" : "") + '" data-e="' + esc(e) + '">' + esc(e) + '</div>'
+  ).join("") + '<div class="tag custom" id="equipCustom">＋ 自定义</div>';
   Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    if(el.id === "equipCustom"){
+      el.onclick = () => inlineInput(box, "例如：弹力带", v => {
+        if(state.equips.indexOf(v) < 0) state.equips.push(v);
+        renderEquips();
+      });
+      return;
+    }
     el.onclick = () => {
       const e = el.dataset.e;
       const i = state.equips.indexOf(e);
-      if(i >= 0) state.equips.splice(i,1); else state.equips.push(e);
+      if(i >= 0) state.equips.splice(i, 1); else state.equips.push(e);
       renderEquips();
     };
   });
@@ -1340,6 +1587,7 @@ const SYS_PROMPT = [
 "- 坐标系 400 × 260，原点左上。x 从左到右，y 从上到下。篮球场左篮筐 x≈20，右篮筐 x≈380，中线 x=200。",
 "- 每一步 players 给 4~8 个球员，按实际分组画。比如「分 2 组每组 4 人」就画 8 个：前 4 个 team=\"r\"，后 4 个 team=\"b\"。不要只画 2-3 个代表。",
 "- 每一步 arrows 至少 1 条，通常 2~5 条。没有箭头的步骤等于没画，绝对不允许。",
+"- 器材（标志桶、标志盘、栏架、垫子）用 cones 字段给坐标，每个项目 2~6 个。球员是圆形带号码，器材是三角，两者绝不能混。",
 "- 箭头用 from / to 指向球员号码，不要写坐标。type 必须选对：运球 dribble、传球 pass、跑位 run、投篮 shoot。",
 "- 第 1 步画起始站位（可以有 1 条箭头表示起动方向），从第 2 步起要能明显看出球员在移动。",
 "- 每个项目给 3 个步骤，不要只给 2 步。",
@@ -1347,7 +1595,7 @@ const SYS_PROMPT = [
 "- coach 给教练位置，站在能看到全队的地方，不要压在中线上。",
 "",
 "一个合格的步骤长这样（分 2 组、每组 2 人，练折返跑）：",
-'{"cap":"两人一组同时出发，跑到标志桶折返","players":[{"n":1,"x":300,"y":90,"team":"r"},{"n":2,"x":300,"y":130,"team":"r"},{"n":3,"x":300,"y":170,"team":"b"},{"n":4,"x":300,"y":210,"team":"b"}],"arrows":[{"from":1,"to":2,"type":"run"},{"from":3,"to":4,"type":"run"}],"zones":[{"x":70,"y":70,"w":80,"h":130,"label":"折返线"}],"coach":{"x":180,"y":40}}',
+'{"cap":"两人一组同时出发，跑到标志桶折返","players":[{"n":1,"x":300,"y":90,"team":"r"},{"n":2,"x":300,"y":130,"team":"r"},{"n":3,"x":300,"y":170,"team":"b"},{"n":4,"x":300,"y":210,"team":"b"}],"arrows":[{"from":1,"to":2,"type":"run"},{"from":3,"to":4,"type":"run"}],"cones":[{"x":80,"y":90},{"x":80,"y":170}],"zones":[{"x":70,"y":70,"w":80,"h":130,"label":"折返线"}],"coach":{"x":180,"y":40}}',
 "",
 "【输出体积】必须紧凑：JSON 不要缩进、不要换行美化，一行输出。文字上限：analysis/grouping/goals/equipment/venue 每个字段不超过 120 字，detail 五段每段不超过 40 字，desc 不超过 25 字。",
 "只输出 JSON，不要解释、不要 markdown 代码块。结构：",
@@ -1358,12 +1606,12 @@ const SYS_PROMPT = [
 ].join("\n");
 
 function buildUserPrompt(cfg){
-  const sp = SPORTS.find(s => s.id === cfg.sport) || SPORTS[1];
-  const st = stageOf(cfg.ageMax);
+  const sp = SPORTS.find(x => x.id === cfg.sport) || SPORTS[0];
+  const gLabel = cfg.genderLabel || "混合";
   const L = [];
   L.push("运动项目：" + sp.name);
-  L.push("学员：" + cfg.ageMin + "-" + cfg.ageMax + " 岁（" + st + "），共 " + cfg.cntMin + "-" + cfg.cntMax + " 人" +
-    (cfg.cntMin === cfg.cntMax ? "（人数固定）" : "（人数浮动）"));
+  L.push("学员学段：" + (cfg.stageLabel || "") + "（" + cfg.ageMin + "-" + cfg.ageMax + " 岁），性别：" + gLabel +
+    "，共 " + cfg.cntMin + "-" + cfg.cntMax + " 人" + (cfg.cntMin === cfg.cntMax ? "（人数固定）" : "（人数浮动）"));
   L.push("课时总长：" + cfg.duration + " 分钟 —— 所有项目 minutes 相加必须正好等于 " + cfg.duration);
   L.push("教案详略：" + (cfg.detail === "full" ? "详细" : "精简"));
   if(cfg.tags && cfg.tags.length) L.push("主要问题：" + cfg.tags.join("、"));
@@ -1376,20 +1624,19 @@ function buildUserPrompt(cfg){
   L.push("项目数量：正好 " + want + " 个（必须包含 1 个比赛/对抗项目 和 1 个最后的放松项目）。");
   L.push("单个项目时长不超过 " + capMin + " 分钟，所有项目加总必须等于 " + cfg.duration + "。");
   L.push("每个项目给 3 个战术步骤，每步至少 1 条箭头。");
+  L.push("性别为「" + gLabel + "」，训练强度、动作选择和分组方式要照顾到这个性别构成。");
   return L.join("\n");
 }
 
-async function callLLM(cfg, systemOverride, maxTokens, noJsonFlag){
+/* 底层请求：任意 messages 都能发 */
+async function chatRaw(messages, maxTokens, noJsonFlag){
   const url = (AI.base || "").replace(/\/+$/, "") + "/chat/completions";
   const headers = { "Content-Type": "application/json" };
   if(AI.key) headers["Authorization"] = "Bearer " + AI.key;
   if(AI.token) headers["X-Access-Token"] = AI.token;
   const body = {
     model: AI.model,
-    messages: [
-      { role: "system", content: systemOverride || SYS_PROMPT },
-      { role: "user", content: buildUserPrompt(cfg) }
-    ],
+    messages: messages,
     temperature: 0.75,
     max_tokens: maxTokens || 8000
   };
@@ -1426,11 +1673,19 @@ async function callLLM(cfg, systemOverride, maxTokens, noJsonFlag){
   const choice = data && data.choices && data.choices[0];
   if(!choice) throw new Error("模型没有返回内容（可能被内容策略拦截）");
   if(choice.finish_reason === "length"){
-    throw new Error("模型输出被截断（达到 token 上限），教案不完整。点重试，或在设置里换一个上下文更大的模型。");
+    throw new Error("模型输出被截断（达到 token 上限），内容不完整。点重试，或在设置里换上下文更大的模型。");
   }
   const content = choice.message && choice.message.content;
   if(!content) throw new Error("模型没有返回内容");
   return content;
+}
+
+/* 生成教案：固定用 SYS_PROMPT + 用户配置 */
+async function callLLM(cfg, systemOverride, maxTokens, noJsonFlag){
+  return chatRaw([
+    { role: "system", content: systemOverride || SYS_PROMPT },
+    { role: "user", content: buildUserPrompt(cfg) }
+  ], maxTokens, noJsonFlag);
 }
 
 /* 从模型输出里抠出 JSON，容忍代码块包裹、尾逗号、被截断 */
@@ -1507,9 +1762,14 @@ function normalizeSteps(raw){
     });
     const coach = (s.coach && isFinite(Number(s.coach.x)))
       ? { x: clampN(s.coach.x, 18, 382), y: clampN(s.coach.y, 18, 242) } : null;
+    const cones = [];
+    (Array.isArray(s.cones) ? s.cones : []).slice(0, 10).forEach(c => {
+      if(!c) return;
+      cones.push({ x: clampN(c.x, 14, 386), y: clampN(c.y, 14, 246) });
+    });
     out.push({
       cap: String(s.cap || ("第 " + (si + 1) + " 步")).slice(0, 60),
-      players: plays, arrows, rects, coach
+      players: plays, arrows, rects, cones, coach
     });
   });
   return out.length ? out : null;
@@ -1677,13 +1937,18 @@ async function startGenerate(){
 }
 function collectCfg(){
   const clamp = (v, d) => { const n = parseInt(v, 10); return isNaN(n) ? d : n; };
-  const a1 = clamp($("ageMin").value, 8), a2 = clamp($("ageMax").value, 10);
+  const st = STAGES.find(x => x.id === state.stage) || STAGES[0];
   const c1 = clamp($("cntMin").value, 6), c2 = clamp($("cntMax").value, 6);
   return {
     sport: state.sport,
+    stage: st.id,
+    stageLabel: st.label,
+    ageMin: st.ageMin,
+    ageMax: st.ageMax,
+    gender: state.gender,
+    genderLabel: (GENDERS.find(x => x.id === state.gender) || GENDERS[2]).label,
     tags: state.tags.slice(),
     needs: $("needs").value,
-    ageMin: Math.min(a1, a2), ageMax: Math.max(a1, a2),
     cntMin: Math.min(c1, c2), cntMax: Math.max(c1, c2),
     duration: state.duration,
     detail: state.detail,
@@ -1808,6 +2073,7 @@ function openDetail(idx){
   $("sheet").classList.add("on");
 }
 function closeDetail(){
+  stopPlay();
   $("mask").classList.remove("on");
   $("sheet").classList.remove("on");
 }
@@ -1828,12 +2094,16 @@ function renderSheetBody(){
   html += '<div class="dia-top">' + renderDiagram(kind, it, state.step) +
     '<div class="stepno">第 ' + (state.step + 1) + ' / ' + steps.length + ' 步</div></div>';
   html += '<div class="dia-cap"><div class="cap"><div class="cn">' + (state.step + 1) + '</div><div>' + esc(s.cap) + '</div></div></div>';
+  const playIcon = state.playing
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
   html += '<div class="dia-ctrl">' +
+      '<button class="nav play' + (state.playing ? " on" : "") + '" id="playStep">' + playIcon + '</button>' +
       '<button class="nav" id="prevStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12l7 7"/></svg></button>' +
       '<div class="dots">' + dots + '</div>' +
       '<button class="nav" id="nextStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>' +
     '</div>';
-  html += '<div class="legend"><span><i></i>跑位</span><span><i class="s1"></i>带球/运球</span><span><i class="s2"></i>传球/击球</span><span><i class="s3"></i>射门/扣杀</span></div>';
+  html += '<div class="legend"><span><i></i>跑位</span><span><i class="s1"></i>带球/运球</span><span><i class="s2"></i>传球/击球</span><span><i class="s3"></i>射门/扣杀</span><span><i class="cone"></i>标志桶</span></div>';
   html += '</div>';
 
   html += '<div class="dtl">';
@@ -1859,11 +2129,22 @@ function renderSheetBody(){
 function dtlRow(k, v){
   return '<div class="dr"><div class="dk">' + k + '</div><div class="dv">' + esc(v) + '</div></div>';
 }
+let playTimer = null;
+function stopPlay(){ if(playTimer){ clearInterval(playTimer); playTimer = null; } state.playing = false; }
 function bindSheet(total){
-  $("prevStep").onclick = () => { state.step = (state.step - 1 + total) % total; renderSheetBody(); };
-  $("nextStep").onclick = () => { state.step = (state.step + 1) % total; renderSheetBody(); };
+  $("prevStep").onclick = () => { stopPlay(); state.step = (state.step - 1 + total) % total; renderSheetBody(); };
+  $("nextStep").onclick = () => { stopPlay(); state.step = (state.step + 1) % total; renderSheetBody(); };
+  if($("playStep")) $("playStep").onclick = () => {
+    if(state.playing){ stopPlay(); renderSheetBody(); return; }
+    state.playing = true;
+    playTimer = setInterval(() => {
+      state.step = (state.step + 1) % total;
+      renderSheetBody();
+    }, 1600);
+    renderSheetBody();
+  };
   Array.prototype.forEach.call($("shBody").querySelectorAll(".dot"), el => {
-    el.onclick = () => { state.step = Number(el.dataset.s); renderSheetBody(); };
+    el.onclick = () => { stopPlay(); state.step = Number(el.dataset.s); renderSheetBody(); };
   });
   $("editBtn").onclick = () => {
     const v = ($("editInput").value || "").trim();
@@ -1888,19 +2169,15 @@ function updateMineCount(){
    ================================================================== */
 function init(){
   renderProjects();
-  renderPainTags();
-  renderAgePresets();
+  renderStages();
+  renderGender();
   renderCntPresets();
   renderDur();
   renderVenue();
   renderEquips();
   updateMineCount();
+  loadTags();
 
-  $("ageMin").oninput = $("ageMax").oninput = function(){
-    const a = parseInt($("ageMin").value,10) || 0, b = parseInt($("ageMax").value,10) || 0;
-    $("stageTag").textContent = stageOf(Math.max(a,b));
-    renderAgePresets();
-  };
   $("cntMin").oninput = $("cntMax").oninput = function(){ renderCntPresets(); };
 
   Array.prototype.forEach.call($("detailPick").querySelectorAll(".d"), el => {
@@ -2055,9 +2332,9 @@ if(typeof document !== "undefined") init();
 
 /* 供 Node 测试 */
 if(typeof module !== "undefined" && module.exports){
-  module.exports = { SPORTS, generatePlan, stageOf, buildSteps, pickItems, allocTime,
+  module.exports = { SPORTS, STAGES, GENDERS, DURS, generatePlan, stageOf, buildSteps, pickItems, allocTime,
     renderDiagram, courtMarkup, stepsOf, AI, PROVIDERS, parseLLMJson, normalizePlan,
-    normalizeSteps, callLLM, buildUserPrompt, SYS_PROMPT };
+    normalizeSteps, callLLM, chatRaw, buildUserPrompt, SYS_PROMPT };
 }
 </script>
 </body>
