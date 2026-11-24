@@ -338,6 +338,16 @@ textarea::-webkit-scrollbar{width:0;display:none}
 .seg i{display:block;border-radius:2px}
 .segnote{font-size:11px;color:var(--ink3);margin-bottom:4px}
 
+/* 五维覆盖 */
+.dims{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+.dim{
+  display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  background:#F5F7FB;border:1px solid #E9EDF4;border-radius:8px;padding:3px 8px;color:var(--ink2);
+}
+.dim i{width:7px;height:7px;border-radius:50%;display:block}
+.dim b{font-weight:800;color:var(--ink);margin-left:1px}
+.dim.off{opacity:.45}
+
 /* 训练项目卡 */
 .item{
   background:#fff;border:1px solid #EDF0F5;border-radius:var(--r);padding:13px 14px;
@@ -629,6 +639,12 @@ textarea::-webkit-scrollbar{width:0;display:none}
       <div class="gender" id="genderTags"></div>
     </div>
 
+    <!-- 基础水平 -->
+    <div class="card">
+      <div class="lbl">基础水平<span class="opt">（决定教学台阶和纠错强度）</span></div>
+      <div class="tags" id="levelTags"></div>
+    </div>
+
     <!-- 人数 -->
     <div class="card">
       <div class="lbl">人数<span class="opt">（最少 ~ 最多，人数固定就填一样）</span></div>
@@ -887,6 +903,147 @@ const SPORTS = [
 }
 ];
 
+/* ==================================================================
+   知识库：训练原则 / 年龄段 / 基础水平 / 项目技术进阶
+   参照公开体系：USA Basketball Player Development Curriculum、
+   LTAD（Long-Term Athlete Development）分期模型、主流教练员手册的
+   教学进阶与纠错逻辑。以 16-22 岁、基础薄弱球员为主要适用对象。
+   ================================================================== */
+const KB_CORE = [
+"【训练原则库 · 每次备课都必须遵守】",
+"1. 技术优先于体能。基础薄弱阶段先把动作做对，再谈量和强度。宁做 10 次正确的，不做 30 次错的。",
+"2. 单一技术点原则。一节课只纠 1~2 个技术要点，多了记不住，等于没纠。",
+"3. 难度阶梯固定：由慢到快 → 由静到动 → 无防到有防。任何新技术都必须走这条线，不许跳级。",
+"4. 高重复、低复杂度。基础靠重复建立动作记忆，不靠花样堆砌。",
+"5. 每节课必须有可测量的成功标准，不能只有「练习」没有「达标」。",
+"6. 失败率控制在 30% 左右。太难会放弃，太易没进步。",
+"7. 训练密度优先于训练时长。60 分钟高强度 > 90 分钟站着听讲。讲解单次不超过 30 秒。",
+"8. 反馈用三明治：先说他做对了什么 → 再改一个点 → 立刻再来一次。一次只改一个。",
+"9. 收尾巩固。最后 5 分钟必须回到今天最关键的那一个动作，用最简单的形式再做一遍。",
+"10. 每节课都要有「降阶版」：准备一个更简单的版本，保证最弱的那个人也能完成。"
+].join("\n");
+
+const KB_AGE = {
+  u18: [
+  "【16-18 岁 · 身体与心理特点】",
+  "- 处于生长发育期，骨骼未闭合。力量以自重和动作模式为主，不做大重量深蹲硬拉；跳跃落地量要控制。",
+  "- 注意持续时间约 15~20 分钟，需要用变换形式（换项目、换分组、加比赛）来维持专注。",
+  "- 竞争意识强、爱表现。用对抗和比赛驱动，比讲道理有效。",
+  "- 技术定型窗口期：投篮手型、运球习惯、脚步动作这段时间一旦练歪，后面很难改。宁可慢，不可歪。",
+  "- 恢复能力有限，不建议一天两练；睡眠不足会直接反映在动作质量上。"
+  ].join("\n"),
+  u22: [
+  "【19-22 岁 · 身体与心理特点】",
+  "- 身体基本成熟，可以承受力量和负荷，但基础薄弱者仍必须先把动作模式做对再加重量。",
+  "- 自主性强，能接受「为什么这么练」的解释。每个项目给一句理由，配合度会明显提高。",
+  "- 多为校队或业余队，训练时间碎片化。适合拆成 20~30 分钟的模块，一次只解决一个问题。",
+  "- 久坐、体态差、旧伤多。热身必须包含髋、踝、胸椎的活动度，核心稳定要作为固定环节。",
+  "- 自尊心强，公开纠错容易抵触。用「我们这一组都有这个问题」代替点名批评。"
+  ].join("\n")
+};
+
+const KB_LEVEL = {
+  zero: [
+  "【零基础 · 教法要求】",
+  "- 只教 3 个动作：原地运球、双手胸前传球、篮下投篮。一节课不增加第四个。",
+  "- 全部用分解教学：先说做什么、再做一遍、然后让他跟着做、最后才完整做。",
+  "- 不安排对抗，不安排计时，不安排排名。先建立「我能做到」的感觉。",
+  "- 成功标准要低到几乎必然达成，例如「10 次里有 6 次球不掉」。"
+  ].join("\n"),
+  weak: [
+  "【基础薄弱 · 教法要求】这是最常见的班型，重点写这一段。",
+  "- 先测后教：第一次课用 3 个简单测试判断水平（绕桶运球用时、罚球 10 次命中数、底线折返跑），再决定从哪一级台阶开始。",
+  "- 拆到最小单元：不会上篮 → 先练「一步起跳」→ 再加球 → 再加慢速防守。每一步都要能单独练、单独达标。",
+  "- 只用 2~3 个动作变式，不搞十几个花样。变式越多，动作越不成型。",
+  "- 口令不超过 6 个字：「压腕」「看篮」「低重心」「别交叉」。长句子他们记不住。",
+  "- 示范优先于讲解。讲解 30 秒内结束，剩下的时间用来做。",
+  "- 对抗必须限规则：限制运球次数、限制区域、限制时间，用规则逼出正确动作，而不是放任乱打。",
+  "- 允许犯错但不允许走形。动作错了可以重来，姿势塌了必须立刻停。"
+  ].join("\n"),
+  mid: [
+  "【水平一般 · 教法要求】",
+  "- 技术动作已基本成型，重点转向「在移动中完成」和「在压力下完成」。",
+  "- 增加组合练习：运球 + 传球、接球 + 投篮，把单一技术串起来。",
+  "- 引入有防守的练习，但防守强度分级：先消极防守、再半强度、最后全力。"
+  ].join("\n"),
+  good: [
+  "【水平较好 · 教法要求】",
+  "- 技术已定型，重点是比赛情境下的决策与执行稳定性。",
+  "- 多用小场对抗（2v2、3v3）和限制条件比赛，训练阅读与选择。",
+  "- 加入疲劳状态下的技术稳定性训练，模拟比赛末段。"
+  ].join("\n")
+};
+
+const KB_SKILL = {
+  basketball: [
+  "【篮球技术教学进阶 · 严格按层级推进，不许跳级】",
+  "- 运球：原地单手 → 原地换手 → 走动 → 慢跑 → 变速变向 → 有防守干扰。每一级都要能连续做对 10 次再进下一级。",
+  "- 传球：对墙 → 两人原地 → 移动中接传 → 有防守压迫。强调「传球到胸口、接球手先出」。",
+  "- 投篮：篮下近距离 → 近距离定点 → 中距离定点 → 移动接球投 → 有干扰。手型不对就不许加距离。",
+  "- 上篮：无球脚步 → 持球一步起 → 完整三步 → 加慢速防守 → 全速对抗。",
+  "- 防守：基本站位 → 原地滑步 → 前后滑步 → 一对一贴身 → 协防轮转。",
+  "- 常见错误与纠正：低头运球→「看前面那个人」；投篮手肘外翻→「手肘对准篮筐」；上篮起跳脚错→「右手上篮左脚起」；防守交叉步→「不许交叉，用滑步」。"
+  ].join("\n"),
+  gym: [
+  "【健身教学进阶】",
+  "- 动作模式优先于重量：先徒手 → 空杆 → 轻重量 → 递增。动作走形立刻降重。",
+  "- 深蹲：徒手箱式深蹲 → 高脚杯深蹲 → 空杆 → 加片。膝盖对脚尖是硬标准。",
+  "- 髋铰链：墙面触碰 → 徒手硬拉 → 空杆 → 加片。背保持中立，靠髋不靠腰。",
+  "- 上肢：俯卧撑 → 卧推；自重划船 → 引体。推拉比例 1:1，避免圆肩。",
+  "- 核心：抗伸展（平板）→ 抗旋转（帕洛夫推）→ 抗侧屈。"
+  ].join("\n"),
+  fitness: [
+  "【体能教学进阶】",
+  "- 先建立动作质量，再加速度和量。落地姿势不对就不许加跳跃高度。",
+  "- 灵敏：直线跑 → 折返 → 绕障碍 → 听信号变向 → 有干扰变向。",
+  "- 爆发：原地纵跳 → 连续跳 → 跳箱 → 单腿落地控制。落地必须轻，膝盖不内扣。",
+  "- 耐力：间歇跑优于长距离慢跑。20-40 秒高强度 + 等时间休息，符合篮球供能特点。",
+  "- 协调：先单侧、再双侧、再交叉，动作由慢到快。"
+  ].join("\n")
+};
+
+/* 按配置拼装系统提示词：核心原则 + 年龄段 + 基础水平 + 项目进阶 */
+function buildSystemPrompt(cfg){
+  const parts = [SYS_PROMPT, "", KB_CORE, ""];
+  const ageKey = (cfg && cfg.ageMax && cfg.ageMax <= 18) ? "u18" : "u22";
+  parts.push(KB_AGE[ageKey], "");
+  const lv = (cfg && cfg.level && KB_LEVEL[cfg.level]) ? cfg.level : "weak";
+  parts.push(KB_LEVEL[lv], "");
+  const sp = (cfg && cfg.sport) || "basketball";
+  parts.push(KB_SKILL[sp] || KB_SKILL.basketball);
+  return parts.join("\n");
+}
+
+/* ---------- 五维：体 / 技 / 战 / 心 / 智 ---------- */
+const DIMS = [
+  {id:"phy",  label:"体", color:"#2FA36B"},
+  {id:"tech", label:"技", color:"#2F6FE4"},
+  {id:"tac",  label:"战", color:"#EF8A3C"},
+  {id:"men",  label:"心", color:"#8256D0"},
+  {id:"iq",   label:"智", color:"#12A3A3"}
+];
+function guessDim(it){
+  var name = (it && it.name) || "";
+  var role = (it && it.role) || "";
+  var nd   = name + " " + ((it && it.desc) || "");
+  var goal = (it && ((it.goal || "") + " " + (it.desc || ""))) || "";
+  /* 1. 名字里就能看出来 */
+  if(/战术|模拟|对抗|攻防|分队/.test(name)) return "tac";
+  if(/心理|抗压|专注|信心/.test(name)) return "men";
+  if(/阅读|判断|选择|决策|观察/.test(name)) return "iq";
+  if(/力量|核心|耐力|速度|灵敏|弹跳|爆发|折返|滑步|梯/.test(name)) return "phy";
+  /* 2. 按角色兜底 */
+  if(role === "比赛") return "tac";
+  if(role === "热身" || role === "力量") return "phy";
+  if(role === "放松") return "men";
+  /* 3. 技术关键词 */
+  if(/投篮|运球|传球|上篮|终结|脚步|防守|挡拆|突破|接球|护球/.test(nd)) return "tech";
+  /* 4. 最后才看目标里的心理/球商词 */
+  if(/心理|抗压|专注|信心/.test(goal)) return "men";
+  if(/阅读|判断|选择|决策/.test(goal)) return "iq";
+  return "tech";
+}
+
 /* ---------- 动作线稿（火柴人示意图） ---------- */
 const G = 'stroke="#1E3A5F" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
 const GL = 'stroke="#1E3A5F" stroke-width="2" stroke-linecap="round" fill="none" stroke-dasharray="4 4" opacity=".35"';
@@ -1022,6 +1179,12 @@ const COND = [
   {id:"none",   label:"不加入"},
   {id:"some",   label:"适量",  desc:"1-2 项"},
   {id:"strong", label:"强化",  desc:"3 项以上"}
+];
+const LEVELS = [
+  {id:"zero", label:"零基础"},
+  {id:"weak", label:"基础薄弱"},
+  {id:"mid",  label:"一般"},
+  {id:"good", label:"较好"}
 ];
 const GENDERS = [
   {id:"m", label:"男",  icon:"♂"},
@@ -1198,6 +1361,7 @@ function generatePlan(cfg){
     desc: it.desc,
     goal: it.goal,
     pose: (it.pose && POSES[it.pose]) ? it.pose : guessPose(it.name + " " + (it.desc || "")),
+    dim: (DIMS.some(function(d){ return d.id === it.dim; }) ? it.dim : guessDim(it)),
     plain: it.plain || "",
     cones: it.cones || [],
     min: mins[i],
@@ -1438,6 +1602,7 @@ const state = {
   gender: "x",
   cls: "train",
   conditioning: "some",
+  level: "weak",
   tags: [],
   tagList: [],
   tagLoading: false,
@@ -1604,6 +1769,17 @@ function renderGender(){
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".g"), el => {
     el.onclick = () => { state.gender = el.dataset.g; renderGender(); };
+  });
+}
+
+/* ================= 基础水平 ================= */
+function renderLevel(){
+  const box = $("levelTags");
+  box.innerHTML = LEVELS.map(l =>
+    '<div class="tag' + (state.level === l.id ? " on" : "") + '" data-l="' + l.id + '">' + l.label + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => { state.level = el.dataset.l; renderLevel(); };
   });
 }
 
@@ -1835,7 +2011,8 @@ const SYS_PROMPT = [
 "",
 "【动作示意】每个项目必须给两个字段：",
 '- pose：从这些里选一个最接近的 —— squat(深蹲) hinge(髋铰链/硬拉) lunge(弓步) plank(平板/核心) jump(起跳/落地) slide(防守滑步) sprint(跑动/折返) dribble(运球) pass(传球) shoot(投篮/终结) stretch(拉伸/放松) ladder(敏捷梯) cone(绕桶/障碍)',
-'- plain：用一句大白话解释这个动作怎么做，说人话。例如「就是屁股往后往下坐，膝盖对着脚尖，别往内扣」。教练看不懂术语，这句是给他看的。', 
+'- plain：用一句大白话解释这个动作怎么做，说人话。例如「就是屁股往后往下坐，膝盖对着脚尖，别往内扣」。教练看不懂术语，这句是给他看的。',
+'- dim：这个项目主要练哪一维 —— phy(体) tech(技) tac(战) men(心) iq(智)。整节课五个维度要尽量覆盖，不能只有技术。', 
 "- 箭头用 from / to 指向球员号码，不要写坐标。type 必须选对：运球 dribble、传球 pass、跑位 run、投篮 shoot。",
 "- 第 1 步画起始站位（可以有 1 条箭头表示起动方向），从第 2 步起要能明显看出球员在移动。",
 "- 每个项目给 3 个步骤，不要只给 2 步。",
@@ -1848,7 +2025,7 @@ const SYS_PROMPT = [
 "【输出体积】必须紧凑：JSON 不要缩进、不要换行美化，一行输出。文字上限：analysis/grouping/goals/equipment/venue 每个字段不超过 120 字，detail 五段每段不超过 40 字，desc 不超过 25 字。",
 "只输出 JSON，不要解释、不要 markdown 代码块。结构：",
 '{"theme":"课程主题（含定位短语和训练营名）","analysis":"学员分析","grouping":"分组方案","goals":"训练目标","equipment":"器材准备","venue":"场地布置",',
-' "items":[{"name":"项目名（不要带分类前缀）","role":"热身|技术|灵敏|力量|比赛|放松","minutes":12,"desc":"一句话说明","goal":"解决的问题","pose":"squat","plain":"大白话解释",',
+' "items":[{"name":"项目名（不要带分类前缀）","role":"热身|技术|灵敏|力量|比赛|放松","minutes":12,"desc":"一句话说明","goal":"解决的问题","pose":"squat","plain":"大白话解释","dim":"phy",',
 ' "detail":{"intro":"简介","org":"组织","rules":"规则/玩法","coach":"教练要点","fix":"解决问题"},',
 ' "steps":[步骤对象，格式见上面示例]}]}'
 ].join("\n");
@@ -1862,7 +2039,8 @@ function buildUserPrompt(cfg){
     "，共 " + cfg.cntMin + "-" + cfg.cntMax + " 人" + (cfg.cntMin === cfg.cntMax ? "（人数固定）" : "（人数浮动）"));
   L.push("课时总长：" + cfg.duration + " 分钟 —— 所有项目 minutes 相加必须正好等于 " + cfg.duration);
   L.push("教案详略：" + (cfg.detail === "full" ? "详细" : "精简"));
-  L.push("课程类型：" + (cfg.clsLabel || "训练课") + "，体能融入：" + (cfg.conditioningLabel || "适量"));
+  L.push("课程类型：" + (cfg.clsLabel || "训练课") + "，体能融入：" + (cfg.conditioningLabel || "适量") +
+    "，学员基础水平：" + (cfg.levelLabel || "基础薄弱"));
   L.push("");
   if(cfg.cls === "big"){
     L.push("【大课规则 · 必须遵守】这是团课，人数多、水平参差。");
@@ -1976,7 +2154,7 @@ async function chatRaw(messages, maxTokens, noJsonFlag){
 /* 生成教案：固定用 SYS_PROMPT + 用户配置 */
 async function callLLM(cfg, systemOverride, maxTokens, noJsonFlag){
   return chatRaw([
-    { role: "system", content: systemOverride || SYS_PROMPT },
+    { role: "system", content: systemOverride || buildSystemPrompt(cfg) },
     { role: "user", content: buildUserPrompt(cfg) }
   ], maxTokens, noJsonFlag);
 }
@@ -2083,6 +2261,7 @@ function normalizePlan(raw, cfg){
       desc: String(it.desc || "").slice(0, 160),
       goal: String(it.goal || "").slice(0, 200),
       pose: (POSES[it.pose] ? it.pose : guessPose(it.name + " " + (it.desc || ""))),
+      dim: (DIMS.some(function(d){ return d.id === it.dim; }) ? it.dim : guessDim(it)),
       plain: String(it.plain || "").slice(0, 80).trim(),
       detail: {
         intro: String(d.intro || it.desc || ""),
@@ -2246,6 +2425,8 @@ function collectCfg(){
     clsLabel: (CLS.find(x => x.id === state.cls) || CLS[1]).label,
     conditioning: state.conditioning,
     conditioningLabel: (COND.find(x => x.id === state.conditioning) || COND[1]).label,
+    level: state.level,
+    levelLabel: (LEVELS.find(x => x.id === state.level) || LEVELS[1]).label,
     tags: state.tags.slice(),
     needs: $("needs").value,
     cntMin: Math.min(c1, c2), cntMax: Math.max(c1, c2),
@@ -2302,6 +2483,13 @@ function renderPlan(){
   html += block("场地", p.venue, isAI);
 
   html += seg;
+  var dimCount = {};
+  p.items.forEach(function(it){ var d = it.dim || "tech"; dimCount[d] = (dimCount[d] || 0) + 1; });
+  html += '<div class="dims">' + DIMS.map(function(d){
+    return '<span class="dim' + (dimCount[d.id] ? "" : " off") + '">' +
+      '<i style="background:' + d.color + '"></i>' + d.label +
+      '<b>' + (dimCount[d.id] || 0) + '</b></span>';
+  }).join("") + '</div>';
   html += '<div class="segnote">共 ' + p.items.length + ' 个训练项目 · ' + p.totalMin + ' 分钟 · 点开查看详情和战术动画</div>';
   html += '</div>';
 
@@ -2321,7 +2509,11 @@ function itemMarkup(it){
     '<div class="item-head">' +
       '<div class="badge" style="background:' + it.color + '">' + n + '</div>' +
       '<div class="item-main"><div class="item-name">' + esc(it.name) + '</div>' +
-      '<div class="item-role">' + esc(it.role) + '</div></div>' +
+      '<div class="item-role">' + esc(it.role) + (function(){
+      var dm = null;
+      DIMS.forEach(function(x){ if(x.id === it.dim) dm = x; });
+      return dm ? ' · <span style="color:' + dm.color + ';font-weight:700">' + dm.label + '</span>' : '';
+    })() + '</div></div>' +
       '<div class="item-min">' + it.min + ' 分钟</div>' +
     '</div>' +
     '<div class="item-desc">' + esc(it.desc) + '</div>' +
@@ -2491,6 +2683,7 @@ function init(){
   renderGender();
   renderCls();
   renderCond();
+  renderLevel();
   renderCntPresets();
   renderDur();
   renderVenue();
@@ -2665,7 +2858,7 @@ if(typeof document !== "undefined") init();
 if(typeof module !== "undefined" && module.exports){
   module.exports = { SPORTS, STAGES, GENDERS, DURS, generatePlan, stageOf, buildSteps, pickItems, allocTime,
     renderDiagram, courtMarkup, stepsOf, AI, PROVIDERS, parseLLMJson, normalizePlan,
-    normalizeSteps, callLLM, chatRaw, buildUserPrompt, SYS_PROMPT, POSES, PLAIN, guessPose };
+    normalizeSteps, callLLM, chatRaw, buildUserPrompt, buildSystemPrompt, SYS_PROMPT, POSES, PLAIN, guessPose, LEVELS, KB_CORE };
 }
 </script>
 </body>
