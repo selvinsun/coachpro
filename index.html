@@ -75,7 +75,7 @@ body{
   .plan-empty .pe-ico{font-size:38px;opacity:.5}
   .plan-empty .pe-t{font-size:14px;font-weight:600;color:var(--ink2)}
   .plan-empty .pe-s{font-size:12px}
-  #screen-plan .pbar{position:sticky;top:0;padding:0 10px 10px;gap:6px}
+  #screen-plan .pbar{position:sticky;top:0;padding:10px 10px 10px;gap:6px}
   #screen-plan .pbar .ttl{font-size:13px}
   #screen-plan .mini{padding:5px 9px;font-size:11px}
   #screen-plan .ai-chip{font-size:9px;padding:1px 5px;margin-left:4px}
@@ -280,14 +280,19 @@ textarea::-webkit-scrollbar{width:0;display:none}
 
 /* ============ 结果页 ============ */
 .pbar{
-  flex-shrink:0;background:var(--navy);color:#fff;padding:0 14px 12px;
+  flex-shrink:0;background:var(--navy);color:#fff;
+  padding:10px 14px 12px;
   display:flex;align-items:center;gap:10px;
-  position:sticky;top:0;z-index:5;
+  position:sticky;top:0;z-index:9;
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
 }
 .back{
-  width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);
+  width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.14);
   display:grid;place-items:center;cursor:pointer;flex-shrink:0;
+  touch-action:manipulation;
 }
+.back:active{background:rgba(255,255,255,.28)}
 .back svg{width:15px;height:15px}
 .pbar .ttl{font-size:14px;font-weight:650;flex:1}
 .mini{
@@ -722,7 +727,11 @@ const AGES = [
   {l:"16-18岁", a:[16,18]}, {l:"成人", a:[19,30]}
 ];
 const COUNTS = ["1人私教","6人","10人","15人","20人"];
-const DURS = [45,60,75,90,120];
+const DURS = (function(){
+  const out = [];
+  for(let m = 45; m <= 180; m += 5) out.push(m);
+  return out;
+})();
 const VENUES = ["室内空地","室外场地","小空间","有器械区"];
 const EQUIPS = ["标志桶","敏捷梯","小栏架","跳绳","体操垫","标志盘"];
 
@@ -825,8 +834,7 @@ const STAGES = [
   {id:"p2", label:"小学高年级", ageMin:10, ageMax:12},
   {id:"m1", label:"初中",      ageMin:13, ageMax:15},
   {id:"h1", label:"高中",      ageMin:16, ageMax:18},
-  {id:"c1", label:"大专",      ageMin:18, ageMax:20},
-  {id:"c2", label:"本科",      ageMin:21, ageMax:22},
+  {id:"u1", label:"大学",      ageMin:18, ageMax:22},
   {id:"ad", label:"成人",      ageMin:23, ageMax:60}
 ];
 const GENDERS = [
@@ -1441,15 +1449,19 @@ function renderDur(){
       }
     }
   };
-  box.onscroll = () => { clearTimeout(box._t); box._t = setTimeout(sync, 70); };
+  const onScroll = () => { clearTimeout(box._t); box._t = setTimeout(sync, 70); };
+  box.onscroll = null;                  /* 初始居中期间不监听，避免把默认值改掉 */
   const center = () => {
     const idx = DURS.indexOf(state.duration);
     const el = box.children[idx];
     if(el) box.scrollLeft = el.offsetLeft + el.offsetWidth / 2 - box.clientWidth / 2;
-    sync();
   };
-  if(typeof requestAnimationFrame === "function") requestAnimationFrame(center);
-  else center();
+  const boot = () => {
+    center();
+    setTimeout(() => { box.onscroll = onScroll; }, 150);
+  };
+  if(typeof requestAnimationFrame === "function") requestAnimationFrame(boot);
+  else boot();
 }
 
 /* ================= 自定义输入 ================= */
@@ -2090,6 +2102,9 @@ function renderSheetBody(){
   const kind = curSport().kind;
   const steps = stepsOf(it);
   const s = steps[Math.min(state.step, steps.length - 1)];
+  const playIcon = state.playing
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
   let dots = "";
   steps.forEach((_, i) => {
     dots += '<div class="dot' + (i === state.step ? " on" : "") + '" data-s="' + i + '">' + (i + 1) + '</div>';
@@ -2103,9 +2118,6 @@ function renderSheetBody(){
     '<div class="stepno">第 ' + (state.step + 1) + ' / ' + steps.length + ' 步</div>' +
     '<button class="play-fab' + (state.playing ? " on" : "") + '" id="playStep">' + playIcon + '</button></div>';
   html += '<div class="dia-cap"><div class="cap"><div class="cn">' + (state.step + 1) + '</div><div>' + esc(s.cap) + '</div></div></div>';
-  const playIcon = state.playing
-    ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l11 7-11 7z"/></svg>';
   html += '<div class="dia-ctrl">' +
       '<button class="nav" id="prevStep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5L8 12l7 7"/></svg></button>' +
       '<div class="dots">' + dots + '</div>' +
