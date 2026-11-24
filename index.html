@@ -186,6 +186,22 @@ body{
 .gender .g.on .gi,.gender .g.on .gl{color:var(--navy)}
 .gender .g:active{transform:scale(.96)}
 
+/* 课程类型二选一卡片 */
+.cls-pick{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+.cls-pick .c{
+  border:1.5px solid var(--line);border-radius:13px;background:#fff;
+  padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center;
+}
+.cls-pick .c .t{font-size:13.5px;font-weight:700;color:var(--ink2)}
+.cls-pick .c .d{font-size:10.5px;color:var(--ink3);margin-top:4px}
+.cls-pick .c.on{border-color:var(--navy3);background:#EEF3FE}
+.cls-pick .c.on .t{color:var(--navy)}
+.cls-pick .c:active{transform:scale(.97)}
+.cls-chip{
+  font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;
+  background:#EEF3FE;color:#22509E;margin-left:5px;vertical-align:middle;
+}
+
 /* 自定义标签输入 */
 .tag.custom{color:#8A6417;background:#FBF4E6;border-color:#F0E3C8}
 .cust-row{display:flex;gap:7px;margin-top:9px}
@@ -574,6 +590,12 @@ textarea::-webkit-scrollbar{width:0;display:none}
       <div class="grid4" id="projects"></div>
     </div>
 
+    <!-- 课程类型 -->
+    <div class="card">
+      <div class="lbl">课程类型</div>
+      <div class="cls-pick" id="clsTags"></div>
+    </div>
+
     <!-- 需求 -->
     <div class="card">
       <div class="lbl">你的需求</div>
@@ -612,6 +634,12 @@ textarea::-webkit-scrollbar{width:0;display:none}
         <div class="wheel" id="durWheel"></div>
         <div class="wheel-mask"></div>
       </div>
+    </div>
+
+    <!-- 体能融入 -->
+    <div class="card">
+      <div class="lbl">体能融入<span class="opt">（在技术项目之间穿插体能练习）</span></div>
+      <div class="tags" id="condTags"></div>
     </div>
 
     <!-- 教案内容 -->
@@ -726,7 +754,7 @@ const AGES = [
   {l:"10-12岁", a:[10,12]}, {l:"13-15岁", a:[13,15]},
   {l:"16-18岁", a:[16,18]}, {l:"成人", a:[19,30]}
 ];
-const COUNTS = ["1人私教","6人","10人","15人","20人"];
+const COUNTS = ["1人私教","6人","10人","15人","20人","30人","40人"];
 const DURS = (function(){
   const out = [];
   for(let m = 45; m <= 180; m += 5) out.push(m);
@@ -772,6 +800,9 @@ const SPORTS = [
         cones:[[110,80],[110,180],[290,80],[290,180]]},
   game2:{name:"1v1 攻防挑战赛", role:"比赛", desc:"半场 1 对 1，进攻限 8 秒，防守不许犯规。", goal:"在真实压力下检验运球、护球与终结能力",
          cones:[[200,60]]},
+  condExtra:[
+    {name:"防守滑步耐力", role:"力量", desc:"沿禁区线连续滑步 30 秒 × 4 组，组间 20 秒。", goal:"提升防守脚步的持续能力与下肢耐力", cones:[[60,90],[60,170]]}
+  ],
   cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点", cones:[]}
 },
 {
@@ -824,18 +855,33 @@ const SPORTS = [
            cones:[[200,90],[240,130],[200,170]]},
   game:{name:"四色标志盘协作接力", role:"比赛", desc:"按颜色信号跑位 + 器材接力，全队完成最快者胜。", goal:"把器材变成规则，在竞争中练习沟通与执行力",
         cones:[[110,80],[110,180],[290,80],[290,180]]},
+  condExtra:[
+    {name:"折返跑间歇", role:"力量", desc:"20 米折返跑 8 趟 × 3 组，组间 45 秒。", goal:"提升无氧耐力与折返起动能力", cones:[[80,90],[80,170]]}
+  ],
   cool:{name:"呼吸拉伸与回顾", role:"放松", desc:"放松主要肌群并回顾本节课表现。", goal:"降低心率、缓解疲劳，用提问巩固学习点", cones:[]}
 }
 ];
 
 /* ---------- 学段 / 性别 / 时长 ---------- */
 const STAGES = [
-  {id:"p1", label:"小学低年级", ageMin:7,  ageMax:9},
-  {id:"p2", label:"小学高年级", ageMin:10, ageMax:12},
-  {id:"m1", label:"初中",      ageMin:13, ageMax:15},
-  {id:"h1", label:"高中",      ageMin:16, ageMax:18},
-  {id:"u1", label:"大学",      ageMin:18, ageMax:22},
-  {id:"ad", label:"成人",      ageMin:23, ageMax:60}
+  {id:"p1", label:"小学低年级", range:"7-9",   ageMin:7,  ageMax:9},
+  {id:"p2", label:"小学高年级", range:"10-12", ageMin:10, ageMax:12},
+  {id:"m1", label:"初中",      range:"13-15", ageMin:13, ageMax:15},
+  {id:"h1", label:"高中",      range:"16-18", ageMin:16, ageMax:18},
+  {id:"u1", label:"大学",      range:"18-22", ageMin:18, ageMax:22},
+  {id:"ad", label:"成人",      range:"23+",   ageMin:23, ageMax:99}
+];
+
+/* 课程类型：大课和训练课是两种产品，产出结构完全不同 */
+const CLS = [
+  {id:"big",   label:"大课",   desc:"团课 · 人多 · 重参与"},
+  {id:"train", label:"训练课", desc:"专项 · 目标明确"}
+];
+/* 体能融入程度 */
+const COND = [
+  {id:"none",   label:"不加入"},
+  {id:"some",   label:"适量",  desc:"1-2 项"},
+  {id:"strong", label:"强化",  desc:"3 项以上"}
 ];
 const GENDERS = [
   {id:"m", label:"男",  icon:"♂"},
@@ -868,22 +914,32 @@ const TAG_FOCUS = {};   /* 标签 → 正向训练主题，由 AI 生成时填�
 function focusList(sport, tags){
   return tags.map(t => TAG_FOCUS[t] || t);
 }
-function pickItems(sport, dur, tags){
-  const items = [];
-  items.push(sport.warm);
+function pickItems(sport, cfg){
+  const dur = cfg.duration;
+  const cond = cfg.conditioning || "some";
+  const tags = cfg.tags || [];
+  const items = [sport.warm];
+
   const sk = sport.skills.slice();
-  // 痛点匹配：优先选名称里含有痛点关键词的技能项
-  if(tags && tags.length){
+  if(tags.length){
     sk.sort((a,b)=>{
-      const sa = tags.some(t => a.name.indexOf(t)>=0) ? -1 : 0;
-      const sb = tags.some(t => b.name.indexOf(t)>=0) ? -1 : 0;
+      const sa = tags.some(t => a.name.indexOf(t) >= 0) ? -1 : 0;
+      const sb = tags.some(t => b.name.indexOf(t) >= 0) ? -1 : 0;
       return sa - sb;
     });
   }
   const wantSkill = dur >= 120 ? 3 : (dur >= 60 ? 2 : 1);
   sk.slice(0, wantSkill).forEach(x => items.push(x));
-  if(dur >= 75 && sport.agility) items.push(sport.agility);
-  if(dur >= 90 && sport.power) items.push(sport.power);
+
+  /* 体能融入：none 不加 / some 一项 / strong 全上 */
+  const pool = [];
+  if(sport.agility) pool.push(sport.agility);
+  if(sport.power) pool.push(sport.power);
+  const extra = sport.condExtra || [];
+  pool.push.apply(pool, extra);
+  if(cond === "some") pool.slice(0, 1).forEach(x => items.push(x));
+  else if(cond === "strong") pool.slice(0, 3).forEach(x => items.push(x));
+
   if(sport.game) items.push(sport.game);
   if(dur >= 120 && sport.game2) items.push(sport.game2);
   items.push(sport.cool);
@@ -993,7 +1049,7 @@ function buildVenue(sport, cfg){
 
 function generatePlan(cfg){
   const sport = SPORTS.find(s => s.id === cfg.sport) || SPORTS[1];
-  const items0 = pickItems(sport, cfg.duration, cfg.tags);
+  const items0 = pickItems(sport, cfg);
   const mins = allocTime(items0, cfg.duration);
   const items = items0.map((it, i) => ({
     idx: i,
@@ -1238,6 +1294,8 @@ const state = {
   sport: "basketball",
   stage: "p2",
   gender: "x",
+  cls: "train",
+  conditioning: "some",
   tags: [],
   tagList: [],
   tagLoading: false,
@@ -1382,7 +1440,7 @@ function renderStages(){
   const box = $("stageTags");
   box.innerHTML = STAGES.map(st =>
     '<div class="tag' + (state.stage === st.id ? " on" : "") + '" data-s="' + st.id + '">' +
-      st.label + ' <span style="opacity:.5;font-size:10px">' + st.ageMin + "-" + st.ageMax + '</span></div>'
+      st.label + ' <span style="opacity:.5;font-size:10px">' + (st.range || (st.ageMin + "-" + st.ageMax)) + '</span></div>'
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
     el.onclick = () => {
@@ -1404,6 +1462,30 @@ function renderGender(){
   ).join("");
   Array.prototype.forEach.call(box.querySelectorAll(".g"), el => {
     el.onclick = () => { state.gender = el.dataset.g; renderGender(); };
+  });
+}
+
+/* ================= 课程类型 ================= */
+function renderCls(){
+  const box = $("clsTags");
+  box.innerHTML = CLS.map(c =>
+    '<div class="c' + (state.cls === c.id ? " on" : "") + '" data-c="' + c.id + '">' +
+      '<div class="t">' + c.label + '</div><div class="d">' + c.desc + '</div></div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".c"), el => {
+    el.onclick = () => { state.cls = el.dataset.c; renderCls(); };
+  });
+}
+
+/* ================= 体能融入 ================= */
+function renderCond(){
+  const box = $("condTags");
+  box.innerHTML = COND.map(c =>
+    '<div class="tag' + (state.conditioning === c.id ? " on" : "") + '" data-c="' + c.id + '">' +
+      c.label + (c.desc ? ' <span style="opacity:.55;font-size:10px">' + c.desc + '</span>' : '') + '</div>'
+  ).join("");
+  Array.prototype.forEach.call(box.querySelectorAll(".tag"), el => {
+    el.onclick = () => { state.conditioning = el.dataset.c; renderCond(); };
   });
 }
 
@@ -1634,12 +1716,39 @@ function buildUserPrompt(cfg){
     "，共 " + cfg.cntMin + "-" + cfg.cntMax + " 人" + (cfg.cntMin === cfg.cntMax ? "（人数固定）" : "（人数浮动）"));
   L.push("课时总长：" + cfg.duration + " 分钟 —— 所有项目 minutes 相加必须正好等于 " + cfg.duration);
   L.push("教案详略：" + (cfg.detail === "full" ? "详细" : "精简"));
+  L.push("课程类型：" + (cfg.clsLabel || "训练课") + "，体能融入：" + (cfg.conditioningLabel || "适量"));
+  L.push("");
+  if(cfg.cls === "big"){
+    L.push("【大课规则 · 必须遵守】这是团课，人数多、水平参差。");
+    L.push("1. 组织必须用「分组循环 / 站点轮转」，把排队等待降到最低，保证每人每 3 分钟至少动一次。");
+    L.push("2. 动作难度低、成功率高；多用游戏化规则、口令和比赛，少做精细分解。");
+    L.push("3. 教练以整体示范和口令为主，不做长时间单人纠错。");
+    L.push("4. 每个项目都要写清「轮换方式」和「安全提醒」。");
+    L.push("5. 目标写成「每个孩子都能完成 X」，不要写精细化技术指标。");
+  } else {
+    L.push("【训练课规则 · 必须遵守】这是专项训练，人数少、目标明确、强度高。");
+    L.push("1. 每个项目必须有可量化的成功标准，例如「连续 10 次不失误」「10 投 6 中」。");
+    L.push("2. 必须写清组数、每组次数或时长、组间间歇。");
+    L.push("3. 必须写「常见错误 + 纠正口令」至少 2 条。");
+    L.push("4. 强度递进：慢速分解 → 完整动作 → 对抗压力。");
+    L.push("5. 允许出现疲劳，但必须有安全边界（什么情况下停、什么情况下降阶）。");
+  }
+  L.push("");
+  if(cfg.conditioning === "strong"){
+    L.push("【体能融入 · 强化】安排 3 个以上体能项目，约占 1/3 课时。每个都要标注训练量（组数 × 次数 / 距离 × 组数）和间歇时间。");
+  } else if(cfg.conditioning === "some"){
+    L.push("【体能融入 · 适量】在技术项目之间穿插 1~2 个体能项目，优先选与该运动专项相关的（如篮球的防守滑步耐力、连续起跳、变向速度、核心抗旋）。体能项目也要写组数和次数。");
+  } else {
+    L.push("【体能融入 · 不加入】不安排独立的体能项目，只保留与技术结合的形式（例如带球折返、带球防守滑步）。");
+  }
   if(cfg.tags && cfg.tags.length) L.push("主要问题：" + cfg.tags.join("、"));
   if((cfg.needs || "").trim()) L.push("教练补充需求：" + cfg.needs.trim());
   if(cfg.venue) L.push("场地条件：" + cfg.venue);
   if(cfg.equips && cfg.equips.length) L.push("可用教具：" + cfg.equips.join("、"));
   L.push("");
-  const want = cfg.duration <= 45 ? 5 : cfg.duration <= 60 ? 6 : cfg.duration <= 90 ? 7 : 9;
+  let want = cfg.duration <= 45 ? 5 : cfg.duration <= 60 ? 6 : cfg.duration <= 90 ? 7 : 9;
+  if(cfg.conditioning === "strong") want += 2;          /* 体能 3 项以上，要多留位置 */
+  if(cfg.cls === "big") want += 1;                      /* 大课站点多一个 */
   const capMin = Math.max(8, Math.round(cfg.duration * 0.25));
   L.push("项目数量：正好 " + want + " 个（必须包含 1 个比赛/对抗项目 和 1 个最后的放松项目）。");
   L.push("单个项目时长不超过 " + capMin + " 分钟，所有项目加总必须等于 " + cfg.duration + "。");
@@ -1967,6 +2076,10 @@ function collectCfg(){
     ageMax: st.ageMax,
     gender: state.gender,
     genderLabel: (GENDERS.find(x => x.id === state.gender) || GENDERS[2]).label,
+    cls: state.cls,
+    clsLabel: (CLS.find(x => x.id === state.cls) || CLS[1]).label,
+    conditioning: state.conditioning,
+    conditioningLabel: (COND.find(x => x.id === state.conditioning) || COND[1]).label,
     tags: state.tags.slice(),
     needs: $("needs").value,
     cntMin: Math.min(c1, c2), cntMax: Math.max(c1, c2),
@@ -2001,7 +2114,8 @@ function renderPlan(){
 
   const isAI = p.source === "ai";
   html += '<div class="card">';
-  html += '<div class="theme">课程主题：' + esc(p.theme) + '</div>';
+  html += '<div class="theme">课程主题：' + esc(p.theme) +
+    (p.cfg && p.cfg.clsLabel ? '<span class="cls-chip">' + esc(p.cfg.clsLabel) + '</span>' : '') + '</div>';
 
   if(p.detail === "full"){
     html += block("学员分析", p.analysis, isAI);
@@ -2191,6 +2305,8 @@ function init(){
   renderProjects();
   renderStages();
   renderGender();
+  renderCls();
+  renderCond();
   renderCntPresets();
   renderDur();
   renderVenue();
